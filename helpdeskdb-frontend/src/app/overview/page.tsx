@@ -17,7 +17,7 @@ import {
 	useOwners,
 } from "@/hooks/queries/entityQueries";
 import { qk } from "@/lib/queryKeys";
-import { unwrap } from "@/services/errors";
+import { getErrorMessage, unwrap } from "@/services/errors";
 import {
 	IAssetViewModel,
 	IAssetViewModelCreate,
@@ -32,6 +32,8 @@ import {
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import AssetList from "@/components/AssetList";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { useDialogSelection } from "@/hooks/useDialogSelection";
+import { makeConfirmHandler } from "@/hooks/useEntityCrud";
 import { EditAssetDialog } from "@/components/dialogs/overviewDialogs/EditAssetDialog";
 import { RemoveAssetDialog } from "@/components/dialogs/overviewDialogs/RemoveAssetDialog";
 import Spinner from "@/components/LoadingSpinner";
@@ -39,6 +41,32 @@ import { CreateAssetDialog } from "@/components/dialogs/overviewDialogs/CreateAs
 import { ReserveAssetDialog } from "@/components/dialogs/overviewDialogs/ReserveAssetDialog";
 import { ChangeReservationTimeDialog } from "@/components/dialogs/overviewDialogs/ChangeReservationTimeDialog";
 import { RemoveReservationDialog } from "@/components/dialogs/overviewDialogs/RemoveReservationDialog";
+
+// Stable identity so the selection hooks' callbacks don't churn every render.
+const assetId = (asset: IAssetViewModel) => asset.id;
+
+// Re-clicking the same row is the retry gesture after a failed load: the query
+// keys don't change, so an errored query would otherwise never refetch and the
+// row would stay stuck. A different row changes the keys and fetches on its own.
+const refetchErrored = (
+	queries: { isError: boolean; refetch: () => unknown }[],
+) => {
+	for (const query of queries) {
+		if (query.isError) query.refetch();
+	}
+};
+
+// `isLoading` (in flight), not `!isSuccess`: a query that errored is also not
+// successful, and keying off that would pin the spinner on forever. A disabled
+// query reports `isLoading: false`, so an asset with no reservation to load
+// never spins either. The `isError && isFetching` term covers the retry after a
+// failed load (see `refetchErrored`): that refetch keeps `status: "error"`, so
+// `isLoading` alone would leave the row spinner off while it is in flight.
+const dialogDataLoading = (query: {
+	isLoading: boolean;
+	isError: boolean;
+	isFetching: boolean;
+}) => query.isLoading || (query.isError && query.isFetching);
 
 export default function Overview() {
 	const { t: tAssetViewModel } = useTranslation("assetviewmodel");
@@ -80,18 +108,44 @@ export default function Overview() {
 	// dialog's data in lockstep without an imperative fetch-then-open step.
 
 	const [showCreateModal, setShowCreateModal] = useState(false);
-	const [assetToUpdate, setAssetToUpdate] = useState<IAssetViewModel | null>(
-		null,
-	);
-	const [assetToRemove, setAssetToRemove] = useState<IAssetViewModel | null>(
-		null,
-	);
-	const [assetToReserve, setAssetToReserve] =
-		useState<IAssetViewModel | null>(null);
-	const [reservationIdToChange, setReservationIdToChange] = useState<
-		string | null
-	>(null);
-	const [assetIdToFreeUp, setAssetIdToFreeUp] = useState<string | null>(null);
+
+	// Selecting a row also writes the dialog's id to the URL. Those params are
+	// write-only breadcrumbs — nothing reads them back, so a refresh lands on
+	// the page with no dialog open.
+	const {
+		selected: assetToUpdate,
+		select: selectAssetToUpdate,
+		clear: clearAssetToUpdate,
+	} = useDialogSelection<IAssetViewModel>({
+		queryParamKey: "editId",
+		getId: assetId,
+	});
+	const {
+		selected: assetToRemove,
+		select: selectAssetToRemove,
+		clear: clearAssetToRemove,
+	} = useDialogSelection<IAssetViewModel>({
+		queryParamKey: "removeId",
+		getId: assetId,
+	});
+	const {
+		selected: assetToReserve,
+		select: selectAssetToReserve,
+		clear: clearAssetToReserve,
+	} = useDialogSelection<IAssetViewModel>({
+		queryParamKey: "reserveId",
+		getId: assetId,
+	});
+	const {
+		selected: reservationIdToChange,
+		select: selectReservationToChange,
+		clear: clearReservationToChange,
+	} = useDialogSelection<string>({ queryParamKey: "changeReservationId" });
+	const {
+		selected: assetIdToFreeUp,
+		select: selectAssetToFreeUp,
+		clear: clearAssetToFreeUp,
+	} = useDialogSelection<string>();
 
 	const editAssetId = assetToUpdate?.id ?? null;
 	const editAssetQuery = useAsset(editAssetId);
@@ -168,15 +222,18 @@ export default function Overview() {
 		onSuccess: invalidateAssetData,
 	});
 
+	// Each of these DTOs already carries the id its endpoint is keyed by, so the
+	// mutations take the DTO alone — which is also what makes `variables` a
+	// uniform place to read the in-flight asset id from, below.
 	const updateAsset = useMutation({
-		mutationFn: (vars: { assetId: string; data: IAssetViewModelUpdate }) =>
-			unwrap(overviewService.updateAsset(vars.assetId, vars.data)),
+		mutationFn: (data: IAssetViewModelUpdate) =>
+			unwrap(overviewService.updateAsset(data.assetId, data)),
 		onSuccess: invalidateAssetData,
 	});
 
 	const removeAsset = useMutation({
-		mutationFn: (vars: { assetId: string; data: IAssetViewModelRemove }) =>
-			unwrap(overviewService.removeAsset(vars.assetId, vars.data)),
+		mutationFn: (data: IAssetViewModelRemove) =>
+			unwrap(overviewService.removeAsset(data.assetId, data)),
 		// Removing an asset also cancels its reservations.
 		onSuccess: () => {
 			invalidateAssetData();
@@ -185,8 +242,8 @@ export default function Overview() {
 	});
 
 	const reserveAsset = useMutation({
-		mutationFn: (vars: { assetId: string; data: IAssetReservationAdd }) =>
-			unwrap(overviewService.reserveAsset(vars.assetId, vars.data)),
+		mutationFn: (data: IAssetReservationAdd) =>
+			unwrap(overviewService.reserveAsset(data.assetId, data)),
 		onSuccess: invalidateReservationData,
 	});
 
@@ -203,23 +260,20 @@ export default function Overview() {
 	});
 
 	const changeReservationTime = useMutation({
-		mutationFn: (vars: {
-			reservationId: string;
-			data: IAssetReservationUpdate;
-		}) =>
+		mutationFn: (data: IAssetReservationUpdate) =>
 			unwrap(
 				overviewService.changeReservationTime(
-					vars.reservationId,
-					vars.data,
+					data.assetReservationId,
+					data,
 				),
 			),
 		// The list key no longer prefix-matches per-id entries, so the edited
 		// reservation's own entry must be invalidated explicitly — otherwise
 		// reopening the dialog within staleTime would show the pre-edit times.
-		onSuccess: (_data, vars) => {
+		onSuccess: (_data, data) => {
 			invalidateReservationData();
 			queryClient.invalidateQueries({
-				queryKey: qk.assetReservation(vars.reservationId),
+				queryKey: qk.assetReservation(data.assetReservationId),
 			});
 		},
 	});
@@ -262,21 +316,6 @@ export default function Overview() {
 		enabled: !anyDialogOpen,
 	});
 
-	const setQueryParam = useCallback(
-		(key: string, value: string | null) => {
-			const params = new URLSearchParams(searchParams.toString());
-			if (value === null) {
-				params.delete(key);
-			} else {
-				params.set(key, value);
-			}
-			router.push(`${window.location.pathname}?${params.toString()}`, {
-				scroll: false,
-			});
-		},
-		[router, searchParams],
-	);
-
 	// A refetch can drop the selected reservation's row (returned or removed
 	// from another tab, say). The dialog can't render without the row, so the
 	// selection must be cleared — left set, it would keep `anyDialogOpen` true
@@ -287,116 +326,57 @@ export default function Overview() {
 			overview.isSuccess &&
 			!assetToChangeReservation
 		) {
-			setReservationIdToChange(null);
-			setQueryParam("changeReservationId", null);
+			clearReservationToChange();
 		}
 	}, [
 		reservationIdToChange,
 		overview.isSuccess,
 		assetToChangeReservation,
-		setQueryParam,
+		clearReservationToChange,
 	]);
 
 	// -------------------------------------------------------------- handlers
 	//
-	// mutateAsync (not mutate) so a failure rejects here and can be reported
-	// the way each dialog expects: an alert for the fire-and-forget actions, a
-	// returned error object for the two dialogs that render it inline.
+	// Every dialog speaks the same ConfirmResult contract: the mutation runs,
+	// success clears the selection (which closes the dialog), and a failure
+	// resolves to `{ error }` for the dialog to render inline — so a rejected
+	// save keeps the dialog open with the user's input still in it.
 
-	const handleCreate = async (createAssetModel: IAssetViewModelCreate) => {
-		try {
-			await createAsset.mutateAsync(createAssetModel);
-		} catch (error) {
-			alert((error as Error).message || "Failed to create asset");
-		} finally {
-			setShowCreateModal(false);
-		}
-	};
+	const handleCreate = makeConfirmHandler(createAsset.mutateAsync, () =>
+		setShowCreateModal(false),
+	);
 
-	const handleEdit = async (
-		assetId: string,
-		updateAssetModel: IAssetViewModelUpdate,
-	) => {
-		try {
-			await updateAsset.mutateAsync({ assetId, data: updateAssetModel });
-		} catch (error) {
-			alert((error as Error).message || "Failed to edit asset");
-		} finally {
-			setAssetToUpdate(null);
-			setQueryParam("editId", null);
-		}
-	};
+	const handleEdit = makeConfirmHandler(
+		updateAsset.mutateAsync,
+		clearAssetToUpdate,
+	);
 
-	const handleRemove = async (
-		assetId: string,
-		assetRemoveVm: IAssetViewModelRemove,
-	) => {
-		try {
-			await removeAsset.mutateAsync({ assetId, data: assetRemoveVm });
-		} catch (error) {
-			alert((error as Error).message || "Failed to remove asset");
-		} finally {
-			setAssetToRemove(null);
-			setQueryParam("removeId", null);
-		}
-	};
+	const handleRemove = makeConfirmHandler(
+		removeAsset.mutateAsync,
+		clearAssetToRemove,
+	);
 
-	// ReserveAssetDialog closes itself once this resolves without `success:
-	// false`, so the error path must not throw.
-	const handleReserve = async (
-		assetId: string,
-		assetReservationVm: IAssetReservationAdd,
-	) => {
-		try {
-			await reserveAsset.mutateAsync({
-				assetId,
-				data: assetReservationVm,
-			});
-			return { success: true };
-		} catch (error) {
-			return {
-				success: false,
-				error: (error as Error).message || "Failed to reserve asset",
-			};
-		}
-	};
+	const handleReserve = makeConfirmHandler(
+		reserveAsset.mutateAsync,
+		clearAssetToReserve,
+	);
 
-	const handleReturnAsset = async (assetId: string) => {
-		try {
-			await returnAsset.mutateAsync(assetId);
-		} catch (error) {
-			alert((error as Error).message || "Failed to return asset");
-		}
-	};
+	const handleRemoveReservation = makeConfirmHandler(
+		removeReservation.mutateAsync,
+		clearAssetToFreeUp,
+	);
 
-	// RemoveReservationDialog closes itself unless this throws — so it doesn't.
-	const handleRemoveReservation = async (assetId: string) => {
-		try {
-			await removeReservation.mutateAsync(assetId);
-		} catch (error) {
-			alert((error as Error).message || "Failed to remove reservation");
-		} finally {
-			setAssetIdToFreeUp(null);
-		}
-	};
+	const handleChangeReservationTime = makeConfirmHandler(
+		changeReservationTime.mutateAsync,
+		clearReservationToChange,
+	);
 
-	const handleChangeReservationTime = async (
-		assetReservationId: string,
-		updateData: IAssetReservationUpdate,
-	): Promise<{ error?: string } | void> => {
+	// The odd one out: a row action with no dialog to host the error.
+	const handleReturnAsset = async (id: string) => {
 		try {
-			await changeReservationTime.mutateAsync({
-				reservationId: assetReservationId,
-				data: updateData,
-			});
-			setReservationIdToChange(null);
-			setQueryParam("changeReservationId", null);
+			await returnAsset.mutateAsync(id);
 		} catch (error) {
-			return {
-				error:
-					(error as Error).message ||
-					"Failed to update reservation time",
-			};
+			alert(getErrorMessage(error));
 		}
 	};
 
@@ -408,19 +388,6 @@ export default function Overview() {
 	const markLoading = (id: string | null | undefined) => {
 		if (id) loading[id] = true;
 	};
-
-	// `isLoading` (in flight), not `!isSuccess`: a query that errored is also
-	// not successful, and keying off that would pin the spinner on forever.
-	// A disabled query reports `isLoading: false`, so an asset with no
-	// reservation to load never spins either. The `isError && isFetching`
-	// term covers the retry after a failed load (re-clicking the row action
-	// refetches): that refetch keeps `status: "error"`, so `isLoading` alone
-	// would leave the row spinner off while the retry is in flight.
-	const dialogDataLoading = (query: {
-		isLoading: boolean;
-		isError: boolean;
-		isFetching: boolean;
-	}) => query.isLoading || (query.isError && query.isFetching);
 
 	const editDataLoading = editQueries.some(dialogDataLoading);
 
@@ -435,7 +402,7 @@ export default function Overview() {
 	if (returnAsset.isPending) markLoading(returnAsset.variables);
 	if (removeReservation.isPending) markLoading(removeReservation.variables);
 	if (changeReservationTime.isPending) {
-		markLoading(changeReservationTime.variables?.data.assetId);
+		markLoading(changeReservationTime.variables?.assetId);
 	}
 
 	const loadFailed =
@@ -468,26 +435,14 @@ export default function Overview() {
 				availableAssets={availableAssets}
 				assetsReservedByUser={assetsReservedByUser}
 				onEditAsset={async (asset: IAssetViewModel) => {
-					// Re-clicking the same asset is the retry gesture after a
-					// failed load: the query keys don't change, so an errored
-					// query would otherwise never refetch and the row would be
-					// stuck. A different asset changes the keys and fetches on
-					// its own.
-					if (asset.id === editAssetId) {
-						for (const query of editQueries) {
-							if (query.isError) query.refetch();
-						}
-					}
-					setQueryParam("editId", asset.id);
-					setAssetToUpdate(asset);
+					if (asset.id === editAssetId) refetchErrored(editQueries);
+					selectAssetToUpdate(asset);
 				}}
 				onRemoveAsset={async (asset: IAssetViewModel) => {
-					setQueryParam("removeId", asset.id);
-					setAssetToRemove(asset);
+					selectAssetToRemove(asset);
 				}}
 				onReserveAsset={async (asset: IAssetViewModel) => {
-					setQueryParam("reserveId", asset.id);
-					setAssetToReserve(asset);
+					selectAssetToReserve(asset);
 				}}
 				loading={loading}
 				mode={selectedMode}
@@ -502,26 +457,17 @@ export default function Overview() {
 				}
 				onCreateAsset={async () => setShowCreateModal(true)}
 				onChangeReservationTime={async (reservationId: string) => {
-					// Same retry-on-re-click as onEditAsset.
-					if (
-						reservationId === reservationIdToChange &&
-						changeReservationQuery.isError
-					) {
-						changeReservationQuery.refetch();
+					if (reservationId === reservationIdToChange) {
+						refetchErrored([changeReservationQuery]);
 					}
-					setQueryParam("changeReservationId", reservationId);
-					setReservationIdToChange(reservationId);
+					selectReservationToChange(reservationId);
 				}}
 				onReturnAsset={handleReturnAsset}
-				onRemoveReservation={async (assetId: string) => {
-					// Same retry-on-re-click as onEditAsset.
-					if (
-						assetId === assetIdToFreeUp &&
-						freeUpReservationQuery.isError
-					) {
-						freeUpReservationQuery.refetch();
+				onRemoveReservation={async (id: string) => {
+					if (id === assetIdToFreeUp) {
+						refetchErrored([freeUpReservationQuery]);
 					}
-					setAssetIdToFreeUp(assetId);
+					selectAssetToFreeUp(id);
 				}}
 			/>
 			<CreateAssetDialog
@@ -543,30 +489,21 @@ export default function Overview() {
 				categories={categories}
 				owners={owners}
 				locations={locations}
-				onClose={() => {
-					setAssetToUpdate(null);
-					setQueryParam("editId", null);
-				}}
+				onClose={clearAssetToUpdate}
 				onConfirm={handleEdit}
 				isLoading={updateAsset.isPending}
 			/>
 			<RemoveAssetDialog
 				open={!!assetToRemove}
 				asset={assetToRemove}
-				onClose={() => {
-					setAssetToRemove(null);
-					setQueryParam("removeId", null);
-				}}
+				onClose={clearAssetToRemove}
 				onConfirm={handleRemove}
 				isLoading={removeAsset.isPending}
 			/>
 			<ReserveAssetDialog
 				open={!!assetToReserve}
 				asset={assetToReserve}
-				onClose={() => {
-					setAssetToReserve(null);
-					setQueryParam("reserveId", null);
-				}}
+				onClose={clearAssetToReserve}
 				onConfirm={handleReserve}
 				isLoading={reserveAsset.isPending}
 			/>
@@ -587,17 +524,14 @@ export default function Overview() {
 						? new Date(changeReservationQuery.data.reservationTo)
 						: null
 				}
-				onClose={() => {
-					setReservationIdToChange(null);
-					setQueryParam("changeReservationId", null);
-				}}
+				onClose={clearReservationToChange}
 				onConfirm={handleChangeReservationTime}
 				isLoading={changeReservationTime.isPending}
 			/>
 			<RemoveReservationDialog
 				open={!!reservationToFreeUp}
 				reservation={reservationToFreeUp}
-				onClose={() => setAssetIdToFreeUp(null)}
+				onClose={clearAssetToFreeUp}
 				onConfirm={handleRemoveReservation}
 				isLoading={removeReservation.isPending}
 			/>

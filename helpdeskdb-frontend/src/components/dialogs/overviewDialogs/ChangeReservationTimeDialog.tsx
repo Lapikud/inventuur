@@ -5,6 +5,7 @@ import { AccountContext } from "@/context/AccountContext";
 import { useDateRangeForm } from "@/hooks/useDateRangeForm";
 import { IAssetReservationUpdate } from "@/types/domain/DomainTypes";
 import { IAssetViewModel } from "@/types/domain/IAssetViewModels";
+import { ConfirmResult } from "../common/entityDialogTypes";
 import { Modal } from "../common/Modal";
 import { ModalFooter } from "../common/ModalFooter";
 import { ReservationTimeFields } from "../common/ReservationTimeFields";
@@ -16,10 +17,7 @@ interface ChangeReservationTimeDialogProps {
 	initialFrom: Date | null;
 	initialTo: Date | null;
 	onClose: () => void;
-	onConfirm: (
-		assetReservationId: string,
-		data: IAssetReservationUpdate,
-	) => Promise<{ error?: string } | void>;
+	onConfirm: (data: IAssetReservationUpdate) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -44,7 +42,7 @@ export const ChangeReservationTimeDialog = ({
 		const range = dates.validate();
 		if (!range) return;
 
-		const result = await onConfirm(assetReservationId, {
+		const result = await onConfirm({
 			assetReservationId,
 			assetId: asset.id,
 			userId: accountInfo?.id ?? "",

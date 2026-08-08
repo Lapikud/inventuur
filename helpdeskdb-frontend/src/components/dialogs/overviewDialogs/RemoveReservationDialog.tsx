@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { IAssetReservationWithNames } from "@/types/domain/DomainTypes";
+import { ConfirmResult } from "../common/entityDialogTypes";
 import { EntityDeleteDialog } from "../common/EntityDeleteDialog";
 import { removeReservationSummary } from "../entityConfigs/assetReservation";
 
@@ -7,7 +8,7 @@ interface RemoveReservationDialogProps {
 	open: boolean;
 	reservation: IAssetReservationWithNames | null;
 	onClose: () => void;
-	onConfirm: (reservationId: string) => Promise<void>;
+	onConfirm: (assetId: string) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -26,11 +27,7 @@ export const RemoveReservationDialog = ({
 	// overview's remove-reservation endpoint is keyed by asset id.
 	const handleConfirm = async () => {
 		if (!reservation) return;
-		try {
-			await onConfirm(reservation.assetId);
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
+		return onConfirm(reservation.assetId);
 	};
 
 	return (

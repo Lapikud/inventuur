@@ -12,6 +12,7 @@ import {
 	IOwner,
 	IOwnerAsset,
 } from "@/types/domain/DomainTypes";
+import { ConfirmResult } from "../common/entityDialogTypes";
 import { EntityFormDialog } from "../common/EntityFormDialog";
 import {
 	EditAssetForm,
@@ -34,10 +35,7 @@ interface IEditAssetDialogProps {
 	locations: ILocation[];
 	owners: IOwner[];
 	onClose: () => void;
-	onConfirm: (
-		assetId: string,
-		updateAsset: IAssetViewModelUpdate
-	) => Promise<void>;
+	onConfirm: (updateAsset: IAssetViewModelUpdate) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -83,22 +81,19 @@ export const EditAssetDialog = ({
 		[asset, comment, categoryAssets, ownerAssets, locationAssets],
 	);
 
+	// The page owns the try/catch and hands the message back through
+	// ConfirmResult, so this only has to map form values to the DTO.
 	const handleConfirm = async (form: EditAssetForm) => {
 		if (!asset) return;
-		try {
-			await onConfirm(
-				asset.id,
-				editAssetToUpdate(
-					form,
-					asset,
-					categoryAssets,
-					ownerAssets,
-					locationAssets,
-				),
-			);
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
+		return onConfirm(
+			editAssetToUpdate(
+				form,
+				asset,
+				categoryAssets,
+				ownerAssets,
+				locationAssets,
+			),
+		);
 	};
 
 	return (

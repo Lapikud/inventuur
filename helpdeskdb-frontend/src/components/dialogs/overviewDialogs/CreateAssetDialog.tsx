@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { IAssetViewModelCreate } from "@/types/domain/IAssetViewModels";
 import { ICategory, ILocation, IOwner } from "@/types/domain/DomainTypes";
+import { ConfirmResult } from "../common/entityDialogTypes";
 import { EntityFormDialog } from "../common/EntityFormDialog";
 import {
 	CreateAssetForm,
@@ -18,7 +19,7 @@ interface ICreateAssetDialogProps {
 	locations: ILocation[];
 	owners: IOwner[];
 	onClose: () => void;
-	onSubmit: (createAsset: IAssetViewModelCreate) => Promise<void>;
+	onSubmit: (createAsset: IAssetViewModelCreate) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -46,13 +47,10 @@ export const CreateAssetDialog = ({
 		[categories, owners, locations],
 	);
 
-	const handleConfirm = async (form: CreateAssetForm) => {
-		try {
-			await onSubmit(createAssetToCreate(form));
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
-	};
+	// The page owns the try/catch and hands the message back through
+	// ConfirmResult, so this only has to map form values to the DTO.
+	const handleConfirm = (form: CreateAssetForm) =>
+		onSubmit(createAssetToCreate(form));
 
 	return (
 		<EntityFormDialog

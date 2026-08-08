@@ -5,6 +5,7 @@ import { AccountContext } from "@/context/AccountContext";
 import { useDateRangeForm } from "@/hooks/useDateRangeForm";
 import { IAssetReservationAdd } from "@/types/domain/DomainTypes";
 import { IAssetViewModel } from "@/types/domain/IAssetViewModels";
+import { ConfirmResult } from "../common/entityDialogTypes";
 import { Modal } from "../common/Modal";
 import { ModalFooter } from "../common/ModalFooter";
 import { ReservationTimeFields } from "../common/ReservationTimeFields";
@@ -13,10 +14,7 @@ interface ReserveAssetDialogProps {
 	open: boolean;
 	asset: IAssetViewModel | null;
 	onClose: () => void;
-	onConfirm: (
-		assetId: string,
-		ReserveAsset: IAssetReservationAdd,
-	) => Promise<{ success: boolean; error?: string } | void>;
+	onConfirm: (reserveAsset: IAssetReservationAdd) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -39,23 +37,17 @@ export const ReserveAssetDialog = ({
 		const range = dates.validate();
 		if (!range) return;
 
-		try {
-			const result = await onConfirm(asset.id, {
-				assetId: asset.id,
-				userId: accountInfo?.id ?? "",
-				reservationFrom: range.from.toISOString(),
-				reservationTo: range.to.toISOString(),
-			});
+		// The page clears the selection on success, which closes this dialog;
+		// on failure it hands the message back to render inline.
+		const result = await onConfirm({
+			assetId: asset.id,
+			userId: accountInfo?.id ?? "",
+			reservationFrom: range.from.toISOString(),
+			reservationTo: range.to.toISOString(),
+		});
 
-			if (result && result.success === false) {
-				dates.setError(result.error || "Reservation failed");
-				return;
-			}
-
-			onClose();
-		} catch (error) {
-			console.error("Reserve failed:", error);
-			dates.setError("Reserve failed unexpectedly");
+		if (result && result.error) {
+			dates.setError(result.error);
 		}
 	};
 

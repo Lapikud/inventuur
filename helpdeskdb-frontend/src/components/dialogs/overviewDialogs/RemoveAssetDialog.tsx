@@ -3,6 +3,7 @@ import {
 	IAssetViewModel,
 	IAssetViewModelRemove,
 } from "@/types/domain/IAssetViewModels";
+import { ConfirmResult } from "../common/entityDialogTypes";
 import { EntityFormDialog } from "../common/EntityFormDialog";
 import {
 	RemoveAssetForm,
@@ -13,10 +14,7 @@ interface RemoveAssetDialogProps {
 	open: boolean;
 	asset: IAssetViewModel | null;
 	onClose: () => void;
-	onConfirm: (
-		assetId: string,
-		removeAsset: IAssetViewModelRemove,
-	) => Promise<void>;
+	onConfirm: (removeAsset: IAssetViewModelRemove) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -31,16 +29,11 @@ export const RemoveAssetDialog = ({
 	// config's own namespace here keeps the title resolvable too.
 	useTranslation("remove");
 
+	// The page owns the try/catch and hands the message back through
+	// ConfirmResult, so this only has to map form values to the DTO.
 	const handleConfirm = async (form: RemoveAssetForm) => {
 		if (!asset) return;
-		try {
-			await onConfirm(asset.id, {
-				assetId: asset.id,
-				comment: form.comment,
-			});
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
+		return onConfirm({ assetId: asset.id, comment: form.comment });
 	};
 
 	if (!asset) return null;
