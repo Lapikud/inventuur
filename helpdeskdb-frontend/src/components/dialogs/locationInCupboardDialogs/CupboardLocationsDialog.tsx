@@ -63,7 +63,9 @@ export const CupboardLocationsDialog = ({
 		ILocationInCupboard
 	>({
 		service: locationInCupboardService,
-		invalidateKeys: [qk.locationsInCupboards()],
+		// overviewRoot: IAssetViewModel embeds the joined cupboardName/shelfNum/column,
+		// so re-placing a location inside a cupboard makes that payload stale.
+		invalidateKeys: [qk.locationsInCupboards(), qk.overviewRoot()],
 	});
 
 	// Writes two entities, so it stays outside useEntityCrud's create/edit/

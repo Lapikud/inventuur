@@ -6,12 +6,12 @@ import { useRefreshTokens, useUsers } from "@/hooks/queries/entityQueries";
 import { IRefreshTokenWithUsername } from "@/types/domain/DomainTypes";
 import ListPageWrapper from "@/components/ListPageWrapper";
 import DataTable from "@/components/DataTable";
+import ErrorBanner from "@/components/ErrorBanner";
 
 export default function RefreshTokens() {
 	const { t: tRefreshToken } = useTranslation("refreshtoken");
-	const { t: tCommon } = useTranslation("common");
 
-	const { data: tokens, isError, error } = useRefreshTokens();
+	const { data: tokens, error } = useRefreshTokens();
 	const { data: users } = useUsers();
 
 	const data: IRefreshTokenWithUsername[] = useMemo(() => {
@@ -48,12 +48,7 @@ export default function RefreshTokens() {
 
 	return (
 		<ListPageWrapper title={tRefreshToken("RefreshTokensTitle")}>
-			{isError && (
-				<div className="mb-4 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
-					{tCommon("LoadFailed")}
-					{error?.message ? `: ${error.message}` : ""}
-				</div>
-			)}
+			<ErrorBanner error={error} variant="page" />
 			<DataTable
 				columns={columns}
 				rows={rows}

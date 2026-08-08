@@ -16,35 +16,79 @@ import {
 } from "./ui/select";
 import { ScrollArea } from "./ui/scroll-area";
 
+const DAY_MS = 1000 * 60 * 60 * 24;
+const DEFAULT_TIME = "05:00";
+
+/**
+ * The calendar window a *new* booking may use: yesterday through 30 days out.
+ * Widened to also cover an existing reservation's range, so an edit dialog can
+ * re-pick dates already on the record — a reservation that started last week
+ * would otherwise open onto a calendar of entirely disabled days.
+ */
+export function reservationBounds(from?: Date | null, to?: Date | null) {
+	const existing = [from, to].filter((d): d is Date => d instanceof Date);
+	return {
+		minDate: existing.reduce(
+			(earliest, d) => (d < earliest ? d : earliest),
+			new Date(Date.now() - DAY_MS),
+		),
+		maxDate: existing.reduce(
+			(latest, d) => (d > latest ? d : latest),
+			new Date(Date.now() + DAY_MS * 30),
+		),
+	};
+}
+
 interface DateTimePickerProps {
 	value: Date | null;
 	onChange: (date: Date | null) => void;
+	/**
+	 * Earliest selectable day. Defaults to yesterday — right for booking something
+	 * new, but the edit dialogs must widen it to include the reservation's existing
+	 * start date, which is usually further in the past and would otherwise be
+	 * unpickable (leaving the user stuck on a calendar of disabled days).
+	 */
+	minDate?: Date;
+	/** Latest selectable day. Defaults to 30 days out. */
+	maxDate?: Date;
 }
 
-export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
+export function DateTimePicker({
+	value,
+	onChange,
+	minDate,
+	maxDate,
+}: DateTimePickerProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [date, setDate] = useState<Date | null>(value ?? null);
 	const [time, setTime] = useState<string>(
-		value ? format(value, "HH:mm") : "05:00",
+		value ? format(value, "HH:mm") : DEFAULT_TIME,
 	);
 
-	// Keep local state in sync if parent controls the value
+	// Keep local state in sync with the parent-controlled value — including when it
+	// goes back to null (useDateRangeForm does that on every open/close). Without the
+	// else branch the trigger keeps displaying the old date while the parent holds
+	// null, so the dialog shows a date but validation reports BothDatesRequired.
 	useEffect(() => {
 		if (value) {
 			setDate(value);
 			setTime(format(value, "HH:mm"));
+		} else {
+			setDate(null);
+			setTime(DEFAULT_TIME);
 		}
 	}, [value]);
 
 	const handleDateChange = (selectedDate: Date | undefined) => {
 		if (!selectedDate) return;
 
-		// Apply current time
+		// Apply current time. Clone first — react-day-picker owns selectedDate.
 		const [hours, minutes] = time.split(":");
-		selectedDate.setHours(parseInt(hours), parseInt(minutes));
+		const newDate = new Date(selectedDate.getTime());
+		newDate.setHours(parseInt(hours), parseInt(minutes));
 
-		setDate(selectedDate);
-		onChange(selectedDate);
+		setDate(newDate);
+		onChange(newDate);
 		setIsOpen(false);
 	};
 
@@ -87,9 +131,11 @@ export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
 						onDayClick={() => setIsOpen(false)}
 						startMonth={new Date(2000, 0)}
 						endMonth={new Date(new Date().getFullYear(), 11)}
-						disabled={(date) =>
-							Number(date) < Date.now() - 1000 * 60 * 60 * 24 ||
-							Number(date) > Date.now() + 1000 * 60 * 60 * 24 * 30
+						disabled={(day) =>
+							Number(day) <
+								(minDate ? Number(minDate) : Date.now() - DAY_MS) ||
+							Number(day) >
+								(maxDate ? Number(maxDate) : Date.now() + DAY_MS * 30)
 						}
 						defaultMonth={date ?? undefined}
 					/>

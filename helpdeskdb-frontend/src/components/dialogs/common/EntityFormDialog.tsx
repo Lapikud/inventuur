@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	FieldValues,
@@ -59,14 +59,25 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 		register,
 		handleSubmit,
 		reset,
-		formState: { errors },
+		formState: { errors, isSubmitting },
 	} = useForm<TForm>({
 		defaultValues: config.defaultValues,
 	});
 
-	// Edit mode: populate the form from the entity being edited.
+	// Edit mode: populate the form from the entity being edited — once per opening.
+	//
+	// The guard matters because `initialValues` is derived from query results in the
+	// callers (EditAssetDialog builds it from five), so its identity changes on every
+	// refetch. Without the ref this effect would reset() mid-edit and silently discard
+	// whatever the user had typed.
+	const populatedRef = useRef(false);
 	useEffect(() => {
-		if (open && mode === "edit" && initialValues) {
+		if (!open) {
+			populatedRef.current = false;
+			return;
+		}
+		if (mode === "edit" && initialValues && !populatedRef.current) {
+			populatedRef.current = true;
 			reset(initialValues);
 		}
 	}, [open, mode, initialValues, reset]);
@@ -85,6 +96,12 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 		setErrorMsg(null);
 		onClose();
 	};
+
+	// isLoading is the parent's mutation.isPending, which only flips true a render
+	// after the click — on its own it lets a fast double-click fire two requests.
+	// react-hook-form's isSubmitting is true for the duration of onSubmit, so the
+	// two together close the gap.
+	const busy = isLoading || isSubmitting;
 
 	const onSubmit: SubmitHandler<TForm> = async (data) => {
 		setErrorMsg(null);
@@ -172,7 +189,7 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 		: tCommon(mode === "create" ? "CreateButton" : "SaveButton");
 
 	return (
-		<Modal open={open} onClose={handleClose}>
+		<Modal open={open} onClose={handleClose} closeDisabled={busy}>
 			<h2 className="text-xl font-bold mb-2 text-black">{title}</h2>
 			{heading && (
 				<h4 className="text-lg text-gray-700 mb-4">{heading}</h4>
@@ -309,7 +326,7 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 
 				<ModalFooter
 					onCancel={handleClose}
-					isLoading={isLoading}
+					isLoading={busy}
 					confirmLabel={confirmLabel}
 					destructive={config.destructive}
 					confirmType="submit"

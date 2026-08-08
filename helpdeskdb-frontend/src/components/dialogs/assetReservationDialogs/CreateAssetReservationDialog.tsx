@@ -72,7 +72,7 @@ export const CreateAssetReservationDialog = ({
 	};
 
 	return (
-		<Modal open={open} onClose={onClose}>
+		<Modal open={open} onClose={onClose} closeDisabled={isLoading}>
 			<h2 className="text-xl font-bold mb-2 text-black">
 				{tCommon("CreateTitle")}
 			</h2>

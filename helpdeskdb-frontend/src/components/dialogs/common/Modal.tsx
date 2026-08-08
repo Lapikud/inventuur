@@ -4,6 +4,15 @@ interface ModalProps {
 	open: boolean;
 	onClose: () => void;
 	children: ReactNode;
+	/**
+	 * Disables the ✕ while a save is in flight. Required whenever the dialog
+	 * surfaces save errors inline: closing mid-save clears the parent's selection,
+	 * which unmounts this subtree (see the early return below), so the `{ error }`
+	 * the confirm handler is about to resolve would land on an unmounted component
+	 * — the failure disappears silently and the user's input goes with it.
+	 * ModalFooter already disables Cancel and Confirm on the same flag.
+	 */
+	closeDisabled?: boolean;
 	className?: string;
 }
 
@@ -11,6 +20,7 @@ export const Modal = ({
 	open,
 	onClose,
 	children,
+	closeDisabled = false,
 	className = "",
 }: ModalProps) => {
 	if (!open) return null;
@@ -23,7 +33,12 @@ export const Modal = ({
 				<div className="flex justify-end px-4 pt-3 shrink-0">
 					<button
 						onClick={onClose}
-						className="text-orange-400 hover:text-gray-700 text-5xl leading-none"
+						disabled={closeDisabled}
+						className={`text-orange-400 text-5xl leading-none ${
+							closeDisabled
+								? "opacity-50 cursor-not-allowed"
+								: "hover:text-gray-700"
+						}`}
 						aria-label="Close"
 					>
 						&times;

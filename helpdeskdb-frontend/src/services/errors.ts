@@ -1,3 +1,4 @@
+import { AxiosError, AxiosResponse } from "axios";
 import { IResultObject } from "@/types/IResultObject";
 
 /**
@@ -18,6 +19,45 @@ export class ApiError extends Error {
 		super(message);
 		this.name = "ApiError";
 	}
+}
+
+/**
+ * Converts a thrown axios error into an `IResultObject` failure.
+ *
+ * Every service's catch block funnels through here so error banners show what the
+ * backend actually said. The shapes checked are the three the API emits: a
+ * `messages` array (validation), or a single `message`/`Message` (the `Message`
+ * record type used by the overview endpoints).
+ *
+ * `statusCode` prefers `response.status` over `AxiosError.status`: on a network
+ * failure the latter is undefined, and falling through to 0 would make the
+ * retry predicate in providers.tsx treat a 4xx as retryable.
+ */
+export function handleServiceError<T>(
+	error: unknown,
+	context = "Service",
+): IResultObject<T> {
+	const axiosErr = error as AxiosError;
+	console.error(`${context} error:`, axiosErr.message);
+
+	const response = axiosErr.response as
+		| AxiosResponse<{
+				messages?: string[];
+				message?: string;
+				Message?: string;
+		  }>
+		| undefined;
+	const serverMessages = response?.data?.messages;
+	const serverMessage = response?.data?.Message || response?.data?.message;
+
+	return {
+		statusCode: response?.status ?? axiosErr.status ?? 0,
+		errors: serverMessages?.length
+			? serverMessages
+			: serverMessage
+				? [serverMessage]
+				: [axiosErr.message ?? axiosErr.code ?? "UNKNOWN_ERROR"],
+	};
 }
 
 /** Best-effort human-readable message from an unknown thrown value. */

@@ -34,7 +34,13 @@ export default function Locations() {
 	const { data = [], error } = useLocations();
 	const crud = useEntityCrud<ILocation, ILocationAdd>({
 		service: locationService,
-		invalidateKeys: [qk.locations()],
+		// overviewRoot embeds the joined shelfNum/column; the other two join on locationId.
+		invalidateKeys: [
+			qk.locations(),
+			qk.overviewRoot(),
+			qk.locationAssets(),
+			qk.locationsInCupboards(),
+		],
 	});
 
 	const columns = [

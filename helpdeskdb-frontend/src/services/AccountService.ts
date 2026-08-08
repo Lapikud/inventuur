@@ -1,15 +1,27 @@
 import { AxiosError } from "axios"
 import { BaseService } from "./BaseService"
+import { handleServiceError } from "./errors"
 import { IResultObject } from "@/types/IResultObject"
 import { IIdentityResponse } from "@/types/IIdentityResponse"
 
 export class AccountService extends BaseService {
 
-	async logoutAsync(): Promise<void> {
+	// Returns a result rather than void: a failed logout leaves hd_jwt/hd_rt valid and the
+	// refresh-token row in the DB, so the caller must NOT clear the identity and navigate as
+	// though the user were signed out — on a shared machine that hands the session to whoever
+	// sits down next. console.error, not console.log: removeConsole strips log in production.
+	async logoutAsync(): Promise<IResultObject<void>> {
 		try {
-			await this.axiosInstance.post('account/logout', null);
+			const response = await this.axiosInstance.post('account/logout', null);
+			if (response.status < 300) {
+				return { statusCode: response.status };
+			}
+			return {
+				statusCode: response.status,
+				errors: [(response.status.toString() + ' ' + response.statusText).trim()],
+			}
 		} catch (error) {
-			console.log('logout error:', (error as Error).message);
+			return handleServiceError(error, "AccountService.logout");
 		}
 	}
 

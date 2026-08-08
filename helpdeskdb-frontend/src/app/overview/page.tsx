@@ -16,7 +16,7 @@ import {
 	useOwnerAssetByAsset,
 	useOwners,
 } from "@/hooks/queries/entityQueries";
-import { qk } from "@/lib/queryKeys";
+import { assetWriteKeys, qk } from "@/lib/queryKeys";
 import { getErrorMessage, unwrap } from "@/services/errors";
 import {
 	IAssetViewModel,
@@ -26,8 +26,8 @@ import {
 } from "@/types/domain/IAssetViewModels";
 import {
 	IAssetReservationWithNames,
-	IAssetReservationAdd,
-	IAssetReservationUpdate,
+	IChangeReservationTimePayload,
+	IReserveAssetPayload,
 } from "@/types/domain/DomainTypes";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import AssetList from "@/components/AssetList";
@@ -196,16 +196,10 @@ export default function Overview() {
 	const queryClient = useQueryClient();
 
 	// Creating or editing an asset writes its category/location/owner mappings
-	// too, so those lists have to go stale alongside the asset lists.
+	// too, so those lists have to go stale alongside the asset lists. Shared with
+	// /dbassets via assetWriteKeys so the two can't drift apart again.
 	const invalidateAssetData = () => {
-		for (const queryKey of [
-			qk.overviewRoot(),
-			qk.assetsRoot(),
-			qk.removedAssets(),
-			qk.categoryAssets(),
-			qk.locationAssets(),
-			qk.ownerAssets(),
-		]) {
+		for (const queryKey of assetWriteKeys()) {
 			queryClient.invalidateQueries({ queryKey });
 		}
 	};
@@ -242,7 +236,7 @@ export default function Overview() {
 	});
 
 	const reserveAsset = useMutation({
-		mutationFn: (data: IAssetReservationAdd) =>
+		mutationFn: (data: IReserveAssetPayload) =>
 			unwrap(overviewService.reserveAsset(data.assetId, data)),
 		onSuccess: invalidateReservationData,
 	});
@@ -260,7 +254,7 @@ export default function Overview() {
 	});
 
 	const changeReservationTime = useMutation({
-		mutationFn: (data: IAssetReservationUpdate) =>
+		mutationFn: (data: IChangeReservationTimePayload) =>
 			unwrap(
 				overviewService.changeReservationTime(
 					data.assetReservationId,

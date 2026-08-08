@@ -1,9 +1,7 @@
-import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import ErrorBanner from "@/components/ErrorBanner";
-import { AccountContext } from "@/context/AccountContext";
 import { useDateRangeForm } from "@/hooks/useDateRangeForm";
-import { IAssetReservationAdd } from "@/types/domain/DomainTypes";
+import { IReserveAssetPayload } from "@/types/domain/DomainTypes";
 import { IAssetViewModel } from "@/types/domain/IAssetViewModels";
 import { ConfirmResult } from "../common/entityDialogTypes";
 import { Modal } from "../common/Modal";
@@ -14,7 +12,7 @@ interface ReserveAssetDialogProps {
 	open: boolean;
 	asset: IAssetViewModel | null;
 	onClose: () => void;
-	onConfirm: (reserveAsset: IAssetReservationAdd) => ConfirmResult;
+	onConfirm: (reserveAsset: IReserveAssetPayload) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -27,7 +25,6 @@ export const ReserveAssetDialog = ({
 }: ReserveAssetDialogProps) => {
 	const { t: tReserve } = useTranslation("reserve");
 	const { t: tAssetReservation } = useTranslation("assetreservation");
-	const { accountInfo } = useContext(AccountContext);
 
 	const dates = useDateRangeForm({ open });
 
@@ -41,7 +38,6 @@ export const ReserveAssetDialog = ({
 		// on failure it hands the message back to render inline.
 		const result = await onConfirm({
 			assetId: asset.id,
-			userId: accountInfo?.id ?? "",
 			reservationFrom: range.from.toISOString(),
 			reservationTo: range.to.toISOString(),
 		});
@@ -54,7 +50,7 @@ export const ReserveAssetDialog = ({
 	if (!asset) return null;
 
 	return (
-		<Modal open={open} onClose={onClose}>
+		<Modal open={open} onClose={onClose} closeDisabled={isLoading}>
 			<h3 className="font-bold text-xl mb-2 text-black">
 				{tReserve("ReserveConfirmQuestion")}
 			</h3>

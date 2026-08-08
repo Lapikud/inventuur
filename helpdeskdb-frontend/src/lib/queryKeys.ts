@@ -49,3 +49,21 @@ export const qk = {
 	userRoles: () => ["userRoles"] as const,
 	users: () => ["users"] as const,
 } as const;
+
+/**
+ * Every cache a write to an *asset* invalidates.
+ *
+ * An asset write also touches its category/location/owner mapping rows and can move
+ * the asset in or out of the removed list, so all of those go stale together. Shared
+ * by the overview page and /dbassets, which previously disagreed: /dbassets invalidated
+ * only the asset and overview lists, leaving the three mapping pages caching rows that
+ * pointed at a deleted assetId — and those pages fall back to rendering the raw GUID.
+ */
+export const assetWriteKeys = () => [
+	qk.overviewRoot(),
+	qk.assetsRoot(),
+	qk.removedAssets(),
+	qk.categoryAssets(),
+	qk.locationAssets(),
+	qk.ownerAssets(),
+];

@@ -1,5 +1,5 @@
-import { AxiosError } from "axios";
 import { BaseService } from "./BaseService";
+import { handleServiceError } from "./errors";
 
 import { IResultObject } from "@/types/IResultObject";
 import { IRefreshToken } from "@/types/domain/DomainTypes";
@@ -52,12 +52,6 @@ export class RefreshTokenService extends BaseService {
 	}
 
 	private handleError<T>(error: unknown): IResultObject<T> {
-		const axiosErr = error as AxiosError;
-		console.error("RefreshTokenService error:", axiosErr.message);
-
-		return {
-			statusCode: axiosErr.status ?? 0,
-			errors: [axiosErr.code ?? "UNKNOWN_ERROR"],
-		};
+		return handleServiceError(error, "RefreshTokenService");
 	}
 }

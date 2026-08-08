@@ -1,9 +1,8 @@
-import { useContext } from "react";
 import { useTranslation } from "react-i18next";
+import { reservationBounds } from "@/components/DateTimePicker";
 import ErrorBanner from "@/components/ErrorBanner";
-import { AccountContext } from "@/context/AccountContext";
 import { useDateRangeForm } from "@/hooks/useDateRangeForm";
-import { IAssetReservationUpdate } from "@/types/domain/DomainTypes";
+import { IChangeReservationTimePayload } from "@/types/domain/DomainTypes";
 import { IAssetViewModel } from "@/types/domain/IAssetViewModels";
 import { ConfirmResult } from "../common/entityDialogTypes";
 import { Modal } from "../common/Modal";
@@ -17,7 +16,7 @@ interface ChangeReservationTimeDialogProps {
 	initialFrom: Date | null;
 	initialTo: Date | null;
 	onClose: () => void;
-	onConfirm: (data: IAssetReservationUpdate) => ConfirmResult;
+	onConfirm: (data: IChangeReservationTimePayload) => ConfirmResult;
 	isLoading: boolean;
 }
 
@@ -32,7 +31,6 @@ export const ChangeReservationTimeDialog = ({
 	isLoading,
 }: ChangeReservationTimeDialogProps) => {
 	const { t: tChangeReservationTime } = useTranslation("changeReservationTime");
-	const { accountInfo } = useContext(AccountContext);
 
 	const dates = useDateRangeForm({ open, initialFrom, initialTo });
 
@@ -45,9 +43,8 @@ export const ChangeReservationTimeDialog = ({
 		const result = await onConfirm({
 			assetReservationId,
 			assetId: asset.id,
-			userId: accountInfo?.id ?? "",
-			reservationFrom: range.from,
-			reservationTo: range.to,
+			reservationFrom: range.from.toISOString(),
+			reservationTo: range.to.toISOString(),
 		});
 
 		if (result && result.error) {
@@ -58,7 +55,7 @@ export const ChangeReservationTimeDialog = ({
 	if (!asset || !assetReservationId) return null;
 
 	return (
-		<Modal open={open} onClose={onClose}>
+		<Modal open={open} onClose={onClose} closeDisabled={isLoading}>
 			<h3 className="font-bold text-xl mb-2 text-black">
 				{tChangeReservationTime("Title")}
 			</h3>
@@ -75,6 +72,7 @@ export const ChangeReservationTimeDialog = ({
 				to={dates.to}
 				onFromChange={dates.setFrom}
 				onToChange={dates.setTo}
+				{...reservationBounds(initialFrom, initialTo)}
 			/>
 
 			<ModalFooter

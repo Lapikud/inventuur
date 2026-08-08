@@ -327,7 +327,7 @@ export default function AssetList({
 								type="text"
 								data-barcode-scan-target=""
 								className="bg-[#efefef] rounded-full pl-4 pr-10 py-2 text-sm text-[#585858] placeholder-[#585858] focus:outline-none w-52"
-								placeholder={tCommon("Search") + "..."}
+								placeholder={tCommon("Search")}
 								value={searchInput}
 								onChange={(e) => onSearchChange(e.target.value)}
 							/>

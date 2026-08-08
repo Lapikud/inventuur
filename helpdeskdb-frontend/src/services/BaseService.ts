@@ -18,6 +18,22 @@ export abstract class BaseService {
 		this.setAccountInfo = fn;
 	}
 
+	/**
+	 * Drops the local identity and sends the user to /login. Called from every path
+	 * where the session has proven unrecoverable — a failed refresh, a refresh that
+	 * returned no identity, and a replayed request that 401'd again. Each of those
+	 * used to reject silently, stranding the UI on a page that looked signed in.
+	 */
+	private endSession() {
+		this.setAccountInfo?.({});
+		if (
+			typeof window !== "undefined" &&
+			!window.location.pathname.startsWith("/login")
+		) {
+			window.location.href = "/login";
+		}
+	}
+
 	constructor() {
 		this.axiosInstance = axios.create({
 			baseURL: "/api/v1/",
@@ -32,6 +48,10 @@ export abstract class BaseService {
 			(response) => response,
 			async (error) => {
 				const originalRequest = error.config;
+				// A rejection with no config (synthesized by another interceptor, or an
+				// aborted request) would make the _retry check below throw a TypeError
+				// from inside this error handler, replacing the real error.
+				if (!originalRequest) return Promise.reject(error);
 				if (
 					error.response &&
 					error.response.status === 401 &&
@@ -66,14 +86,22 @@ export abstract class BaseService {
 							return this.axiosInstance(originalRequest);
 						}
 
+						// Refresh "succeeded" with no identity body. There is no valid
+						// session to continue with, so fall through to the sign-out path
+						// rather than leaving the UI on an apparently-authenticated page
+						// issuing 401s with no route back to /login.
+						this.endSession();
 						return Promise.reject(error);
 					} catch (refreshError) {
-						this.setAccountInfo?.({});
-						if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-							window.location.href = "/login";
-						}
+						this.endSession();
 						return Promise.reject(refreshError);
 					}
+				}
+				// Reaching here with a 401 means the replayed request was rejected too —
+				// _retry is per-request, so a cross-tab refresh that rotated hd_rt out
+				// from under this tab lands here. Same dead end: sign out.
+				if (error.response?.status === 401 && originalRequest._retry) {
+					this.endSession();
 				}
 				return Promise.reject(error);
 			}

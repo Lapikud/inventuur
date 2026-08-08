@@ -10,13 +10,13 @@ import {
 import { IUserWithRoles } from "@/types/domain/DomainTypes";
 import ListPageWrapper from "@/components/ListPageWrapper";
 import DataTable from "@/components/DataTable";
+import ErrorBanner from "@/components/ErrorBanner";
 
 export default function Users() {
 	const { t: tUser } = useTranslation("appuser");
 	const { t: tRole } = useTranslation("approle");
-	const { t: tCommon } = useTranslation("common");
 
-	const { data: users, isError, error } = useUsers();
+	const { data: users, error } = useUsers();
 	const { data: roles } = useRoles();
 	const { data: userRoles } = useUserRoles();
 
@@ -43,12 +43,7 @@ export default function Users() {
 
 	return (
 		<ListPageWrapper title={tUser("AppUsers")}>
-			{isError && (
-				<div className="mb-4 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
-					{tCommon("LoadFailed")}
-					{error?.message ? `: ${error.message}` : ""}
-				</div>
-			)}
+			<ErrorBanner error={error} variant="page" />
 			<DataTable columns={columns} rows={rows} />
 		</ListPageWrapper>
 	);

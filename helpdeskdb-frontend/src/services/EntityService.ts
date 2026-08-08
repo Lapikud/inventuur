@@ -1,6 +1,6 @@
 import { IResultObject } from "@/types/IResultObject";
 import { BaseService } from "./BaseService";
-import { AxiosError, AxiosResponse } from "axios";
+import { handleServiceError } from "./errors";
 import { IDomainId } from "@/types/IDomainId";
 
 export abstract class EntityService<
@@ -154,27 +154,6 @@ export abstract class EntityService<
 	}
 
 	protected handleError<T>(error: unknown): IResultObject<T> {
-		const axiosErr = error as AxiosError;
-		console.error("EntityService error:", axiosErr.message);
-
-		const response = axiosErr.response as
-			| AxiosResponse<{
-					messages?: string[];
-					message?: string;
-					Message?: string;
-			  }>
-			| undefined;
-		const serverMessages = response?.data?.messages;
-		const serverMessage =
-			response?.data?.Message || response?.data?.message;
-
-		return {
-			statusCode: response?.status ?? axiosErr.status ?? 0,
-			errors: serverMessages?.length
-				? serverMessages
-				: serverMessage
-					? [serverMessage]
-					: [axiosErr.message ?? axiosErr.code ?? "UNKNOWN_ERROR"],
-		};
+		return handleServiceError(error, "EntityService");
 	}
 }

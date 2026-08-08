@@ -1,6 +1,5 @@
-import { AxiosError } from "axios";
-import type { AxiosResponse } from "axios";
 import { BaseService } from "./BaseService";
+import { handleServiceError } from "./errors";
 import {
 	IAssetViewModel,
 	IAssetsOverviewViewModel,
@@ -10,8 +9,8 @@ import {
 } from "@/types/domain/IAssetViewModels";
 import { IResultObject } from "@/types/IResultObject";
 import {
-	IAssetReservationAdd,
-	IAssetReservationUpdate,
+	IChangeReservationTimePayload,
+	IReserveAssetPayload,
 } from "@/types/domain/DomainTypes";
 
 export class OverviewService extends BaseService {
@@ -114,7 +113,7 @@ export class OverviewService extends BaseService {
 
 	async reserveAsset(
 		id: string,
-		data: IAssetReservationAdd,
+		data: IReserveAssetPayload,
 	): Promise<IResultObject<{ message: string }>> {
 		try {
 			const response = await this.axiosInstance.post<{ message: string }>(
@@ -137,7 +136,7 @@ export class OverviewService extends BaseService {
 
 	async changeReservationTime(
 		reservationId: string,
-		data: IAssetReservationUpdate,
+		data: IChangeReservationTimePayload,
 	): Promise<IResultObject<null>> {
 		try {
 			const response = await this.axiosInstance.put(
@@ -201,27 +200,6 @@ export class OverviewService extends BaseService {
 	}
 
 	private handleError<T>(error: unknown): IResultObject<T> {
-		const axiosErr = error as AxiosError;
-		console.error("OverviewService error:", axiosErr.message);
-
-		const response = axiosErr.response as
-			| AxiosResponse<{
-					messages?: string[];
-					message?: string;
-					Message?: string;
-			  }>
-			| undefined;
-		const serverMessages = response?.data?.messages;
-		const serverMessage =
-			response?.data?.Message || response?.data?.message;
-
-		return {
-			statusCode: response?.status ?? axiosErr.status ?? 0,
-			errors: serverMessages?.length
-				? serverMessages
-				: serverMessage
-					? [serverMessage]
-					: [axiosErr.message ?? axiosErr.code ?? "UNKNOWN_ERROR"],
-		};
+		return handleServiceError(error, "OverviewService");
 	}
 }

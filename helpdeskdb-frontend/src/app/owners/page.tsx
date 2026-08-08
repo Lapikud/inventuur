@@ -34,7 +34,8 @@ export default function Owners() {
 	const { data = [], error } = useOwners();
 	const crud = useEntityCrud<IOwner, IOwnerAdd>({
 		service: ownerService,
-		invalidateKeys: [qk.owners()],
+		// overviewRoot: IAssetViewModel embeds the joined ownerName.
+		invalidateKeys: [qk.owners(), qk.overviewRoot()],
 	});
 
 	const columns = [

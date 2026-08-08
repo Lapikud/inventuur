@@ -1,6 +1,6 @@
 import { IResultObject } from "@/types/IResultObject";
 import { BaseService } from "./BaseService";
-import { AxiosError } from "axios";
+import { handleServiceError } from "./errors";
 
 export class UserManagementService extends BaseService {
 	constructor() {
@@ -62,12 +62,6 @@ export class UserManagementService extends BaseService {
 	}
 
 	private handleError<T>(error: unknown): IResultObject<T> {
-		const axiosErr = error as AxiosError;
-		console.error("UserManagementService error:", axiosErr.message);
-
-		return {
-			statusCode: axiosErr.status ?? 0,
-			errors: [axiosErr.code ?? "UNKNOWN_ERROR"],
-		};
+		return handleServiceError(error, "UserManagementService");
 	}
 }

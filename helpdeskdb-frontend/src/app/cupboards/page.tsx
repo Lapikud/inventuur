@@ -34,7 +34,8 @@ export default function Cupboards() {
 	const { data = [], error } = useCupboards();
 	const crud = useEntityCrud<ICupboard, ICupboardAdd>({
 		service: cupboardService,
-		invalidateKeys: [qk.cupboards()],
+		// overviewRoot embeds the joined cupboardName; cupboardsInRooms joins on cupboardId.
+		invalidateKeys: [qk.cupboards(), qk.overviewRoot(), qk.cupboardsInRooms()],
 	});
 
 	const columns = [

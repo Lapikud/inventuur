@@ -16,11 +16,17 @@ export interface IAssetAdd {
 }
 
 // Asset reservation
+//
+// Dates are ISO strings, not Date objects: that is what the API sends and what
+// JSON can carry. They were typed as Date, which forced every consumer to re-wrap
+// with new Date(...) anyway and needed a `toISOString() as unknown as Date` double
+// cast on the write path to compile — hiding the mismatch from tsc rather than
+// fixing it. Use formatDateTime (src/lib/format.ts) to display them.
 export interface IAssetReservation extends IDomainId {
 	userId: string;
 	assetId: string;
-	reservationFrom: Date;
-	reservationTo: Date;
+	reservationFrom: string;
+	reservationTo: string;
 	isReturned: boolean;
 }
 
@@ -35,9 +41,19 @@ export interface IAssetReservationUpdate {
 	assetReservationId: string;
 	userId: string;
 	assetId: string;
-	reservationFrom: Date;
-	reservationTo: Date;
+	reservationFrom: string;
+	reservationTo: string;
 }
+
+// The overview's reserve / change-time payloads carry no userId: HomeController
+// reserves for the authenticated caller and explicitly ignores any UserId in the
+// body, and ChangeReservationTime 404s unless the caller already owns the row. The
+// admin flows on /assetReservations do send userId — they can act for another user.
+export type IReserveAssetPayload = Omit<IAssetReservationAdd, "userId">;
+export type IChangeReservationTimePayload = Omit<
+	IAssetReservationUpdate,
+	"userId"
+>;
 
 export interface IAssetReservationWithNames extends IAssetReservation {
 	assetName: string;
@@ -259,12 +275,13 @@ export interface IUserRoleWithUsernameAndRoleName extends IUserRole {
 }
 
 // Refresh token
+// Dates are ISO strings — see the note on IAssetReservation.
 export interface IRefreshToken extends IDomainId {
 	userId: string;
 	refreshToken: string;
 	previousRefreshToken: string;
-	expiration: Date;
-	previousExpiration: Date;
+	expiration: string;
+	previousExpiration: string;
 }
 
 export interface IRefreshTokenWithUsername extends IRefreshToken {

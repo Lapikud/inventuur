@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ErrorBanner from "@/components/ErrorBanner";
 import { Modal } from "./Modal";
@@ -46,6 +46,10 @@ export const EntityDeleteDialog = <TEntity extends { id: string }>({
 	const { t: tCommon } = useTranslation("common");
 
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
+	// isLoading (the parent's mutation.isPending) only flips true a render after the
+	// click, so on its own it lets a fast double-click fire two DELETEs. This is a ref
+	// rather than state because it has to take effect within the same tick.
+	const submittingRef = useRef(false);
 
 	const handleClose = () => {
 		setErrorMsg(null);
@@ -53,11 +57,17 @@ export const EntityDeleteDialog = <TEntity extends { id: string }>({
 	};
 
 	const handleSubmit = async () => {
+		if (submittingRef.current) return;
 		setErrorMsg(null);
 		if (!entity) return;
-		const result = await onConfirm(entity.id);
-		if (result && result.error) {
-			setErrorMsg(result.error);
+		submittingRef.current = true;
+		try {
+			const result = await onConfirm(entity.id);
+			if (result && result.error) {
+				setErrorMsg(result.error);
+			}
+		} finally {
+			submittingRef.current = false;
 		}
 	};
 
@@ -66,7 +76,7 @@ export const EntityDeleteDialog = <TEntity extends { id: string }>({
 	const heading = subtitle ?? (singularKey ? tEntity(singularKey) : null);
 
 	return (
-		<Modal open={open} onClose={handleClose}>
+		<Modal open={open} onClose={handleClose} closeDisabled={isLoading}>
 			<h2 className="text-xl font-bold mb-2 text-black">
 				{titleKey ? tEntity(titleKey) : tCommon("DeleteTitle")}
 			</h2>

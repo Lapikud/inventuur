@@ -34,7 +34,8 @@ export default function Categories() {
 	const { data = [], error } = useCategories();
 	const crud = useEntityCrud<ICategory, ICategoryAdd>({
 		service: categoryService,
-		invalidateKeys: [qk.categories()],
+		// overviewRoot: IAssetViewModel embeds the joined categoryName.
+		invalidateKeys: [qk.categories(), qk.overviewRoot()],
 	});
 
 	const columns = [

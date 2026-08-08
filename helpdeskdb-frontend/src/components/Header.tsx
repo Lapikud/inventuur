@@ -22,6 +22,7 @@ export default function Header() {
 	const adminDropdownRef = useRef<HTMLDivElement>(null);
 
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [logoutError, setLogoutError] = useState<string | null>(null);
 
 	const { canManage } = usePermissions();
 
@@ -48,8 +49,22 @@ export default function Header() {
 
 	const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-	const handleLogout = async () => {
-		await accountService.logoutAsync();
+	// preventDefault matters: these are <a href="#"> triggers, and the browser would
+	// otherwise perform the "#" navigation while this is still awaiting — including on
+	// the failure path below, where we deliberately stay put.
+	const handleLogout = async (event: React.MouseEvent) => {
+		event.preventDefault();
+		const result = await accountService.logoutAsync();
+
+		if (result.errors?.length || (result.statusCode ?? 0) >= 400) {
+			// The backend did not delete the refresh token and did not clear the
+			// cookies, so the session is still live. Claiming otherwise would leave
+			// it usable by whoever reloads this browser next.
+			setLogoutError(tCommon("LogoutFailed"));
+			return;
+		}
+
+		setLogoutError(null);
 		// Clearing the identity is what drops the query cache — QueryCacheReset
 		// watches it, so no explicit queryClient.clear() belongs here.
 		setAccountInfo!({});
@@ -453,6 +468,14 @@ export default function Header() {
 							</Link>
 						)}
 					</div>
+				</div>
+			)}
+			{logoutError && (
+				<div
+					role="alert"
+					className="mx-3 mb-3 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-2 text-sm"
+				>
+					{logoutError}
 				</div>
 			)}
 		</nav>

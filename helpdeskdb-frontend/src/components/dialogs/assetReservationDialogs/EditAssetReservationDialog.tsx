@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { reservationBounds } from "@/components/DateTimePicker";
 import ErrorBanner from "@/components/ErrorBanner";
 import { useDateRangeForm } from "@/hooks/useDateRangeForm";
 import {
@@ -29,7 +30,6 @@ export const EditAssetReservationDialog = ({
 }: EditAssetReservationDialogProps) => {
 	const { t: tChangeReservationTime } = useTranslation("changeReservationTime");
 
-	// The reservation's dates arrive as ISO strings despite the Date type.
 	const initialFrom = useMemo(
 		() => (reservation ? new Date(reservation.reservationFrom) : null),
 		[reservation],
@@ -51,8 +51,8 @@ export const EditAssetReservationDialog = ({
 			id: reservation.id,
 			assetId: reservation.assetId,
 			userId: reservation.userId,
-			reservationFrom: range.from.toISOString() as unknown as Date,
-			reservationTo: range.to.toISOString() as unknown as Date,
+			reservationFrom: range.from.toISOString(),
+			reservationTo: range.to.toISOString(),
 			isReturned: reservation.isReturned,
 		});
 
@@ -64,7 +64,7 @@ export const EditAssetReservationDialog = ({
 	if (!reservation) return null;
 
 	return (
-		<Modal open={open} onClose={onClose}>
+		<Modal open={open} onClose={onClose} closeDisabled={isLoading}>
 			<h3 className="font-bold text-xl mb-2 text-black">
 				{tChangeReservationTime("Title")}
 			</h3>
@@ -81,6 +81,7 @@ export const EditAssetReservationDialog = ({
 				to={dates.to}
 				onFromChange={dates.setFrom}
 				onToChange={dates.setTo}
+				{...reservationBounds(initialFrom, initialTo)}
 			/>
 
 			<ModalFooter

@@ -61,7 +61,8 @@ export default function CupboardsInRooms() {
 		ICupboardInRoom
 	>({
 		service: cupboardsInRoomsService,
-		invalidateKeys: [qk.cupboardsInRooms()],
+		// overviewRoot: re-placing a cupboard changes the asset's joined roomName.
+		invalidateKeys: [qk.cupboardsInRooms(), qk.overviewRoot()],
 	});
 
 	const data: ICupboardInRoomWithNames[] = useMemo(() => {

@@ -5,7 +5,7 @@ import { assetService } from "@/services";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAssets } from "@/hooks/queries/entityQueries";
 import { useEntityCrud } from "@/hooks/useEntityCrud";
-import { qk } from "@/lib/queryKeys";
+import { assetWriteKeys } from "@/lib/queryKeys";
 import { IAsset, IAssetAdd } from "@/types/domain/DomainTypes";
 import ListPageWrapper from "@/components/ListPageWrapper";
 import DataTable from "@/components/DataTable";
@@ -34,11 +34,13 @@ export default function Assets() {
 	const { canManage } = usePermissions();
 
 	const { data = [], error } = useAssets(true);
-	// Root key so both includeRemoved variants refetch — the false variant
-	// feeds the reservation create dialog's asset list.
+	// assetWriteKeys covers the asset root key (so both includeRemoved variants
+	// refetch — the false variant feeds the reservation create dialog's asset
+	// list), the overview, and the three mapping lists plus removedAssets, which
+	// all hold rows keyed on assetId. Same set the overview page invalidates.
 	const crud = useEntityCrud<IAsset, IAssetAdd>({
 		service: assetService,
-		invalidateKeys: [qk.assetsRoot(), qk.overviewRoot()],
+		invalidateKeys: assetWriteKeys(),
 	});
 
 	const columns = [

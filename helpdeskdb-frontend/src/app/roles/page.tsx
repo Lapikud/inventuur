@@ -34,7 +34,9 @@ export default function Roles() {
 	const { data = [], error } = useRoles();
 	const crud = useEntityCrud<IRole, IRoleAdd>({
 		service: roleService,
-		invalidateKeys: [qk.roles()],
+		// userRoles: /users joins it against roles and .filter(Boolean)s the misses, so a
+		// link to a deleted role would silently vanish from the row instead of updating.
+		invalidateKeys: [qk.roles(), qk.userRoles()],
 	});
 
 	const columns = [
