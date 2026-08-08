@@ -23,7 +23,12 @@ import ListPageWrapper from "@/components/ListPageWrapper";
 import DataTable from "@/components/DataTable";
 import ErrorBanner from "@/components/ErrorBanner";
 import CreateButton from "@/components/CreateButton";
-import { ActionCell, EditButton, DeleteButton } from "@/components/TableActions";
+import {
+	ActionCell,
+	DeleteButton,
+	DetailsButton,
+	EditButton,
+} from "@/components/TableActions";
 import { EntityFormDialog } from "@/components/dialogs/common/EntityFormDialog";
 import { EntityEditDialog } from "@/components/dialogs/common/EntityEditDialog";
 import { EntityDeleteDialog } from "@/components/dialogs/common/EntityDeleteDialog";
@@ -135,8 +140,8 @@ export default function CupboardsInRooms() {
 								label={tCommon("EditLink")}
 								onClick={() => crud.openEdit(item)}
 							/>
-							<button
-								type="button"
+							<DetailsButton
+								label={tCommon("DetailsLink")}
 								onClick={() => {
 									setSelectedCupboard({
 										id: item.cupboardId,
@@ -144,10 +149,7 @@ export default function CupboardsInRooms() {
 									});
 									setShowLocations(true);
 								}}
-								className="text-sm font-medium py-2 px-4 rounded-xl whitespace-nowrap transition-colors duration-150 text-center block w-full bg-[#eeeeee] hover:bg-gray-200 text-[#616161]"
-							>
-								{tCommon("DetailsLink")}
-							</button>
+							/>
 							<DeleteButton
 								label={tCommon("DeleteLink")}
 								onClick={() => crud.openDelete(item)}

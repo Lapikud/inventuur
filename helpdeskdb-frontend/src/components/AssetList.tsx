@@ -4,6 +4,8 @@ import { useState } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { AssetCardDetails } from "./AssetCardDetails";
 import { AssetLineDetails } from "./AssetLineDetails";
+import { assetLineFields } from "./assetFields";
+import { DeleteButton, EditButton, PrimaryButton } from "./TableActions";
 
 interface AssetListProps {
 	availableAssets: IAssetViewModel[];
@@ -42,6 +44,37 @@ function ChevronIcon({ open }: { open: boolean }) {
 	);
 }
 
+function ModeRadio({
+	value,
+	label,
+	selected,
+	onSelect,
+}: {
+	value: string;
+	label: string;
+	selected: boolean;
+	onSelect: (mode: string) => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={() => onSelect(value)}
+			className="flex items-center gap-1.5"
+		>
+			<span
+				className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-colors ${
+					selected ? "border-[#ff9800]" : "border-gray-300"
+				}`}
+			>
+				{selected && (
+					<span className="w-3 h-3 rounded-full bg-[#ff9800]" />
+				)}
+			</span>
+			<span className="text-sm text-[#424242]">{label}</span>
+		</button>
+	);
+}
+
 export default function AssetList({
 	availableAssets,
 	assetsReservedByUser,
@@ -63,6 +96,8 @@ export default function AssetList({
 	const { t: tAssetlistpartial } = useTranslation("_assetlistpartial");
 	const { t: tCommon } = useTranslation("common");
 	const { t: tAssetViewModel } = useTranslation("assetviewmodel");
+	// The column labels carry their own namespace prefix (see assetFields.ts).
+	const { t } = useTranslation(["assetviewmodel", "common"]);
 
 	const { canSeeReservationActions: showActions } = usePermissions();
 
@@ -109,48 +144,37 @@ export default function AssetList({
 	const renderActionButtons = (asset: IAssetViewModel, isReserved: boolean) => {
 		if (!showActions) return null;
 		const isDisabled = loading[asset.id];
-		const btnBase =
-			"text-sm font-medium py-2 px-4 rounded-xl whitespace-nowrap transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed";
+		// An expired reservation can only be returned — its time can no longer
+		// be changed and there is nothing left to cancel.
+		const isExpired = isExpiredNotReturned(asset, true);
 
 		return (
 			<div className="flex flex-col gap-1.5 items-stretch">
 				{isReserved ? (
 					<>
-						{isExpiredNotReturned(asset, true) ? (
-							<button
-								onClick={() => onReturnAsset(asset.id)}
-								disabled={isDisabled}
-								className={`${btnBase} bg-[#ff9800] hover:bg-[#f0941d] text-white`}
-							>
-								{tAssetlistpartial("Returned")}
-							</button>
-						) : (
+						<PrimaryButton
+							label={tAssetlistpartial("Returned")}
+							onClick={() => onReturnAsset(asset.id)}
+							disabled={isDisabled}
+						/>
+						{!isExpired && (
 							<>
-								<button
-									onClick={() => onReturnAsset(asset.id)}
-									disabled={isDisabled}
-									className={`${btnBase} bg-[#ff9800] hover:bg-[#f0941d] text-white`}
-								>
-									{tAssetlistpartial("Returned")}
-								</button>
-								<button
+								<PrimaryButton
+									label={tAssetlistpartial(
+										"ChangeReservationTime",
+									)}
 									onClick={() =>
 										onChangeReservationTime(
 											asset.reservationId!,
 										)
 									}
 									disabled={isDisabled || !asset.reservationId}
-									className={`${btnBase} bg-[#ff9800] hover:bg-[#f0941d] text-white`}
-								>
-									{tAssetlistpartial("ChangeReservationTime")}
-								</button>
-								<button
+								/>
+								<PrimaryButton
+									label={tAssetlistpartial("RemoveReservation")}
 									onClick={() => onRemoveReservation(asset.id)}
 									disabled={isDisabled}
-									className={`${btnBase} bg-[#ff9800] hover:bg-[#f0941d] text-white`}
-								>
-									{tAssetlistpartial("RemoveReservation")}
-								</button>
+								/>
 							</>
 						)}
 					</>
@@ -159,28 +183,22 @@ export default function AssetList({
 						{tAssetlistpartial("NotYetReturned")}
 					</span>
 				) : (
-					<button
+					<PrimaryButton
+						label={tAssetlistpartial("Reserve")}
 						onClick={() => onReserveAsset(asset)}
 						disabled={isDisabled}
-						className={`${btnBase} bg-[#ff9800] hover:bg-[#f0941d] text-white`}
-					>
-						{tAssetlistpartial("Reserve")}
-					</button>
+					/>
 				)}
-				<button
+				<EditButton
+					label={tCommon("EditLink")}
 					onClick={() => onEditAsset(asset)}
 					disabled={isDisabled}
-					className={`${btnBase} bg-[#e3f2fd] hover:bg-blue-100 text-[#50b3f1]`}
-				>
-					{tCommon("EditLink")}
-				</button>
-				<button
+				/>
+				<DeleteButton
+					label={tAssetlistpartial("Remove")}
 					onClick={() => onRemoveAsset(asset)}
 					disabled={isDisabled}
-					className={`${btnBase} bg-[#ffebee] hover:bg-red-100 text-[#ea6e6c]`}
-				>
-					{tAssetlistpartial("Remove")}
-				</button>
+				/>
 			</div>
 		);
 	};
@@ -189,28 +207,13 @@ export default function AssetList({
 		<div
 			className={`bg-[#424242] text-white text-sm rounded-full mx-4 mt-4 px-6 py-3 grid gap-1 ${showActions ? "grid-cols-11" : "grid-cols-10"}`}
 		>
-			<div className="text-center">{tAssetViewModel("AssetName")}</div>
-			<div className="text-center">
-				<span className="block leading-tight">
-					{tAssetViewModel("SerialNumber")}
-				</span>
-			</div>
-			<div className="text-center">{tAssetViewModel("Category")}</div>
-			<div className="text-center">{tAssetViewModel("Owner")}</div>
-			<div className="text-center">{tAssetViewModel("RoomName")}</div>
-			<div className="text-center">{tAssetViewModel("CupboardName")}</div>
-			<div className="text-center">
-				<span className="block leading-tight">
-					{tAssetViewModel("ShelfNum")}
-				</span>
-			</div>
-			<div className="text-center">{tAssetViewModel("Column")}</div>
-			<div className="text-center">
-				<span className="block leading-tight">
-					{tAssetViewModel("ClosestReservationBy")}
-				</span>
-			</div>
-			<div className="text-center">{tCommon("AddedAt")}</div>
+			{assetLineFields.map((field) => (
+				<div key={field.labelKey} className="text-center">
+					<span className="block leading-tight">
+						{t(field.labelKey)}
+					</span>
+				</div>
+			))}
 			{showActions && (
 				<div className="text-center">{tAssetlistpartial("Actions")}</div>
 			)}
@@ -302,46 +305,18 @@ export default function AssetList({
 					<div className="flex items-center gap-3 flex-wrap justify-end">
 						{/* Mode toggle */}
 						<div className="flex items-center gap-4">
-							<button
-								type="button"
-								onClick={() => onModeChange("lines")}
-								className="flex items-center gap-1.5"
-							>
-								<span
-									className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-colors ${
-										mode === "lines"
-											? "border-[#ff9800]"
-											: "border-gray-300"
-									}`}
-								>
-									{mode === "lines" && (
-										<span className="w-3 h-3 rounded-full bg-[#ff9800]" />
-									)}
-								</span>
-								<span className="text-sm text-[#424242]">
-									{tAssetlistpartial("ShowLines")}
-								</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => onModeChange("cards")}
-								className="flex items-center gap-1.5"
-							>
-								<span
-									className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-colors ${
-										mode === "cards"
-											? "border-[#ff9800]"
-											: "border-gray-300"
-									}`}
-								>
-									{mode === "cards" && (
-										<span className="w-3 h-3 rounded-full bg-[#ff9800]" />
-									)}
-								</span>
-								<span className="text-sm text-[#424242]">
-									{tAssetlistpartial("ShowCards")}
-								</span>
-							</button>
+							<ModeRadio
+								value="lines"
+								label={tAssetlistpartial("ShowLines")}
+								selected={mode === "lines"}
+								onSelect={onModeChange}
+							/>
+							<ModeRadio
+								value="cards"
+								label={tAssetlistpartial("ShowCards")}
+								selected={mode === "cards"}
+								onSelect={onModeChange}
+							/>
 						</div>
 						{/* Search */}
 						<form
