@@ -7,7 +7,9 @@ import {
 	SubmitHandler,
 	useForm,
 } from "react-hook-form";
+import ErrorBanner from "@/components/ErrorBanner";
 import { Modal } from "./Modal";
+import { ModalFooter } from "./ModalFooter";
 import {
 	ConfirmResult,
 	FormDialogConfig,
@@ -19,6 +21,9 @@ interface EntityFormDialogProps<TForm extends FieldValues> {
 	open: boolean;
 	mode: "create" | "edit";
 	config: FormDialogConfig<TForm>;
+	// Already-translated subtitle replacing the config's singularKey — for
+	// dialogs that head with the entity's name rather than its type.
+	subtitle?: string;
 	// Edit mode: the values of the entity being edited. Must be
 	// referentially stable (memoize in the wrapper) or the form resets
 	// on every parent re-render. Null hides the dialog entirely.
@@ -36,6 +41,7 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 	open,
 	mode,
 	config,
+	subtitle,
 	initialValues,
 	options,
 	staticValues,
@@ -154,20 +160,25 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 		Record<string, { message?: unknown }>
 	>;
 
+	const title = config.titleKey
+		? tEntity(config.titleKey)
+		: tCommon(mode === "create" ? "CreateTitle" : "EditTitle");
+
+	const heading =
+		subtitle ?? (config.singularKey ? tEntity(config.singularKey) : null);
+
+	const confirmLabel = config.confirmLabelKey
+		? tEntity(config.confirmLabelKey)
+		: tCommon(mode === "create" ? "CreateButton" : "SaveButton");
+
 	return (
 		<Modal open={open} onClose={handleClose}>
-			<h2 className="text-xl font-bold mb-2 text-black">
-				{mode === "create" ? tCommon("CreateTitle") : tCommon("EditTitle")}
-			</h2>
-			<h4 className="text-lg text-gray-700 mb-4">
-				{tEntity(config.singularKey)}
-			</h4>
-
-			{errorMsg && (
-				<div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-400 rounded">
-					{errorMsg}
-				</div>
+			<h2 className="text-xl font-bold mb-2 text-black">{title}</h2>
+			{heading && (
+				<h4 className="text-lg text-gray-700 mb-4">{heading}</h4>
 			)}
+
+			<ErrorBanner error={errorMsg} variant="dialog" />
 
 			<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 				{config.fields.map((field) => {
@@ -215,22 +226,37 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 								{fieldLabel}
 							</label>
 
-							{field.kind === "text" && (
-								<input
-									id={field.name}
-									type="text"
-									className="w-full p-2 border border-gray-300 rounded"
-									placeholder={
-										field.placeholderKey
-											? tEntity(field.placeholderKey)
-											: undefined
-									}
-									{...register(
-										field.name,
-										buildRules(fieldLabel, field.validation),
-									)}
-								/>
-							)}
+							{field.kind === "text" &&
+								(field.multiline ? (
+									<textarea
+										id={field.name}
+										className="w-full p-2 border border-gray-300 rounded"
+										placeholder={
+											field.placeholderKey
+												? tEntity(field.placeholderKey)
+												: undefined
+										}
+										{...register(
+											field.name,
+											buildRules(fieldLabel, field.validation),
+										)}
+									/>
+								) : (
+									<input
+										id={field.name}
+										type="text"
+										className="w-full p-2 border border-gray-300 rounded"
+										placeholder={
+											field.placeholderKey
+												? tEntity(field.placeholderKey)
+												: undefined
+										}
+										{...register(
+											field.name,
+											buildRules(fieldLabel, field.validation),
+										)}
+									/>
+								))}
 
 							{field.kind === "number" && (
 								<input
@@ -281,29 +307,13 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 					);
 				})}
 
-				<div className="flex justify-end gap-3 mt-6">
-					<button
-						type="button"
-						onClick={handleClose}
-						disabled={isLoading}
-						className="px-4 py-2 bg-gray-400 hover:bg-gray-300 text-white rounded font-medium transition-colors"
-					>
-						{tCommon("Cancel")}
-					</button>
-					<button
-						type="submit"
-						disabled={isLoading}
-						className={`px-4 py-2 bg-orange-500 hover:bg-orange-600 font-medium text-white rounded transition-colors ${
-							isLoading ? "opacity-50 cursor-not-allowed" : ""
-						}`}
-					>
-						{isLoading
-							? tCommon("Processing")
-							: mode === "create"
-							? tCommon("CreateButton")
-							: tCommon("SaveButton")}
-					</button>
-				</div>
+				<ModalFooter
+					onCancel={handleClose}
+					isLoading={isLoading}
+					confirmLabel={confirmLabel}
+					destructive={config.destructive}
+					confirmType="submit"
+				/>
 			</form>
 		</Modal>
 	);

@@ -1,9 +1,12 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Modal } from "../common/Modal";
-import { DateTimePicker } from "@/components/DateTimePicker";
+import ErrorBanner from "@/components/ErrorBanner";
 import { AccountContext } from "@/context/AccountContext";
+import { useDateRangeForm } from "@/hooks/useDateRangeForm";
 import { IAsset, IAssetReservationAdd } from "@/types/domain/DomainTypes";
+import { Modal } from "../common/Modal";
+import { ModalFooter } from "../common/ModalFooter";
+import { ReservationTimeFields } from "../common/ReservationTimeFields";
 
 interface CreateAssetReservationDialogProps {
 	open: boolean;
@@ -28,59 +31,48 @@ export const CreateAssetReservationDialog = ({
 	const { accountInfo } = useContext(AccountContext);
 
 	const [selectedAssetId, setSelectedAssetId] = useState("");
-	const [reservationFrom, setReservationFrom] = useState<Date | null>(null);
-	const [reservationTo, setReservationTo] = useState<Date | null>(null);
-	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-	const resetForm = () => {
+	const dates = useDateRangeForm({ open });
+
+	// The dates reset themselves on every open/close; the asset select is
+	// this dialog's own state, so it resets alongside them.
+	useEffect(() => {
 		setSelectedAssetId("");
-		setReservationFrom(null);
-		setReservationTo(null);
-		setErrorMsg(null);
-	};
-
-	const handleClose = () => {
-		resetForm();
-		onClose();
-	};
+	}, [open]);
 
 	const handleSubmit = async () => {
-		setErrorMsg(null);
+		dates.setError(null);
 
 		if (!accountInfo?.id) {
-			setErrorMsg(tValidation("Required", { field: tAssetReservation("UserId") }));
+			dates.setError(
+				tValidation("Required", { field: tAssetReservation("UserId") }),
+			);
 			return;
 		}
 		if (!selectedAssetId) {
-			setErrorMsg(tValidation("Required", { field: tAssetReservation("AssetId") }));
+			dates.setError(
+				tValidation("Required", { field: tAssetReservation("AssetId") }),
+			);
 			return;
 		}
-		if (!reservationFrom || !reservationTo) {
-			setErrorMsg(tValidation("BothDatesRequired"));
-			return;
-		}
-		if (reservationTo <= reservationFrom) {
-			setErrorMsg(tValidation("ReservationToMustBeAfterFrom"));
-			return;
-		}
+
+		const range = dates.validate();
+		if (!range) return;
 
 		const result = await onConfirm({
 			assetId: selectedAssetId,
 			userId: accountInfo.id,
-			reservationFrom: reservationFrom.toISOString(),
-			reservationTo: reservationTo.toISOString(),
+			reservationFrom: range.from.toISOString(),
+			reservationTo: range.to.toISOString(),
 		});
 
 		if (result && result.error) {
-			setErrorMsg(result.error);
-			return;
+			dates.setError(result.error);
 		}
-
-		resetForm();
 	};
 
 	return (
-		<Modal open={open} onClose={handleClose}>
+		<Modal open={open} onClose={onClose}>
 			<h2 className="text-xl font-bold mb-2 text-black">
 				{tCommon("CreateTitle")}
 			</h2>
@@ -88,11 +80,7 @@ export const CreateAssetReservationDialog = ({
 				{tAssetReservation("AssetReservationSingular")}
 			</h4>
 
-			{errorMsg && (
-				<div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-400 rounded">
-					{errorMsg}
-				</div>
-			)}
+			<ErrorBanner error={dates.error} variant="dialog" />
 
 			<div className="mb-4">
 				<label className="block text-gray-700 mb-2">
@@ -121,41 +109,22 @@ export const CreateAssetReservationDialog = ({
 				</div>
 			</div>
 
-			<div className="mb-4">
-				<label className="block text-gray-700 mb-2">
-					{tAssetReservation("ReservationFrom")}
-				</label>
-				<DateTimePicker
-					value={reservationFrom}
-					onChange={setReservationFrom}
-				/>
-			</div>
+			<ReservationTimeFields
+				fromLabel={tAssetReservation("ReservationFrom")}
+				toLabel={tAssetReservation("ReservationTo")}
+				from={dates.from}
+				to={dates.to}
+				onFromChange={dates.setFrom}
+				onToChange={dates.setTo}
+			/>
 
-			<div className="mb-4">
-				<label className="block text-gray-700 mb-2">
-					{tAssetReservation("ReservationTo")}
-				</label>
-				<DateTimePicker value={reservationTo} onChange={setReservationTo} />
-			</div>
-
-			<div className="flex justify-end gap-3 mt-6">
-				<button
-					onClick={handleClose}
-					className="px-4 py-2 bg-gray-400 hover:bg-gray-300 text-white rounded font-medium transition-colors"
-					disabled={isLoading}
-				>
-					{tCommon("Cancel")}
-				</button>
-				<button
-					onClick={handleSubmit}
-					disabled={isLoading}
-					className={`px-4 py-2 bg-orange-500 hover:bg-orange-600 font-medium text-white rounded transition-colors ${
-						isLoading ? "opacity-50 cursor-not-allowed" : ""
-					}`}
-				>
-					{isLoading ? tCommon("Processing") : tCommon("CreateButton")}
-				</button>
-			</div>
+			<ModalFooter
+				onCancel={onClose}
+				onConfirm={handleSubmit}
+				isLoading={isLoading}
+				confirmLabel={tCommon("CreateButton")}
+				confirmType="button"
+			/>
 		</Modal>
 	);
 };

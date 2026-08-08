@@ -8,6 +8,7 @@ import {
 } from "@/types/domain/DomainTypes";
 import {
 	IAssetViewModel,
+	IAssetViewModelCreate,
 	IAssetViewModelUpdate,
 } from "@/types/domain/IAssetViewModels";
 import {
@@ -127,6 +128,51 @@ export const editAssetToUpdate = (
 	ownerAssetsId: ownerAssets?.id ?? null,
 	locationAssetsId: locationAssets?.id ?? null,
 });
+
+// Create renders exactly the same fields as edit; only the title (the
+// create dialog heads with its own "Create new asset" wording and no
+// subtitle) and the outgoing DTO differ.
+export type CreateAssetForm = EditAssetForm;
+
+export const createAssetFormConfig: FormDialogConfig<CreateAssetForm> = {
+	...editAssetFormConfig,
+	singularKey: undefined,
+	titleKey: "createnewasset:Title",
+};
+
+export const createAssetToCreate = (
+	form: CreateAssetForm,
+): IAssetViewModelCreate => ({
+	assetName: form.assetName,
+	comment: form.comment,
+	serialNumber: form.serialNumber || null,
+	barcode: form.barcode || null,
+	selectedCategoryId: form.categoryId,
+	selectedOwnerId: form.ownerId,
+	selectedLocationId: form.locationId,
+});
+
+export type RemoveAssetForm = {
+	comment: string;
+};
+
+export const removeAssetFormConfig: FormDialogConfig<RemoveAssetForm> = {
+	namespace: "remove",
+	titleKey: "RemoveConfirmQuestion",
+	confirmLabelKey: "RemoveButton",
+	destructive: true,
+	defaultValues: { comment: "" },
+	fields: [
+		{
+			kind: "text",
+			name: "comment",
+			labelKey: "common:Comment",
+			placeholderKey: "common:CommentPrompt",
+			multiline: true,
+			validation: { required: true, minLength: 2, maxLength: 255 },
+		},
+	],
+};
 
 export const categoriesToOptions = (categories: ICategory[]): SelectOption[] =>
 	toOptions(categories, (c) => c.categoryName);

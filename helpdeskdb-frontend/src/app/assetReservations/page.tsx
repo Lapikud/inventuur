@@ -28,7 +28,8 @@ import {
 } from "@/components/TableActions";
 import { CreateAssetReservationDialog } from "@/components/dialogs/assetReservationDialogs/CreateAssetReservationDialog";
 import { EditAssetReservationDialog } from "@/components/dialogs/assetReservationDialogs/EditAssetReservationDialog";
-import { DeleteAssetReservationDialog } from "@/components/dialogs/assetReservationDialogs/DeleteAssetReservationDialog";
+import { EntityDeleteDialog } from "@/components/dialogs/common/EntityDeleteDialog";
+import { deleteAssetReservationSummary } from "@/components/dialogs/entityConfigs/assetReservation";
 
 export default function AssetReservations() {
 	const { t: tAssetReservation } = useTranslation("assetreservation");
@@ -167,9 +168,9 @@ export default function AssetReservations() {
 				{...crud.createDialogProps}
 			/>
 
-			{/* These three dialogs take `reservation`, not the generic `entity`
-			    prop, so their props are wired explicitly rather than spread.
-			    Phase 4 rebuilds them on the generic dialogs. */}
+			{/* Its date pickers aren't a FieldSpec kind, so this one stays a
+			    bespoke dialog — and it takes `reservation`, not the generic
+			    `entity` prop, hence the explicit wiring. */}
 			<EditAssetReservationDialog
 				open={crud.entityToEdit !== null}
 				reservation={crud.entityToEdit}
@@ -178,12 +179,11 @@ export default function AssetReservations() {
 				isLoading={crud.editMutation.isPending}
 			/>
 
-			<DeleteAssetReservationDialog
-				open={crud.entityToDelete !== null}
-				reservation={crud.entityToDelete}
-				onClose={crud.deleteDialogProps.onClose}
-				onConfirm={crud.handleDelete}
-				isLoading={crud.deleteMutation.isPending}
+			<EntityDeleteDialog
+				namespace="assetreservation"
+				singularKey="AssetReservationSingular"
+				summaryFields={deleteAssetReservationSummary}
+				{...crud.deleteDialogProps}
 			/>
 		</ListPageWrapper>
 	);

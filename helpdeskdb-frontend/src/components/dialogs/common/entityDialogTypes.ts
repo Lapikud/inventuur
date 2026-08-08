@@ -34,6 +34,8 @@ export type FieldSpec<TForm extends FieldValues> =
 			name: Path<TForm>;
 			labelKey: string;
 			placeholderKey?: string;
+			// Renders a <textarea> instead of a single-line <input>.
+			multiline?: boolean;
 			validation?: ValidationSpec;
 	  }
 	| {
@@ -71,9 +73,20 @@ export type FieldSpec<TForm extends FieldValues> =
 			valueKey: string;
 	  };
 
+// The optional key overrides below resolve in `namespace`, same "ns:Key"
+// prefix rule as labelKey. Omitted, they fall back to the "common"
+// Create/Edit/Delete wording, which is what every entity CRUD page uses.
 export interface FormDialogConfig<TForm extends FieldValues> {
 	namespace: string;
-	singularKey: string;
+	// Subtitle key (the entity's type). Omit for dialogs that head with the
+	// entity's own name instead — they pass EntityFormDialog's `subtitle`.
+	singularKey?: string;
+	// Overrides "common:CreateTitle" / "common:EditTitle".
+	titleKey?: string;
+	// Overrides "common:CreateButton" / "common:SaveButton".
+	confirmLabelKey?: string;
+	// Red confirm button, for form dialogs that destroy something.
+	destructive?: boolean;
 	fields: FieldSpec<TForm>[];
 	defaultValues: DefaultValues<TForm>;
 }
@@ -81,4 +94,6 @@ export interface FormDialogConfig<TForm extends FieldValues> {
 export interface DeleteSummaryField<TEntity> {
 	labelKey: string;
 	render: (entity: TEntity) => ReactNode;
+	// Half-width: pairs up with the next `half` field in the summary grid.
+	half?: boolean;
 }
