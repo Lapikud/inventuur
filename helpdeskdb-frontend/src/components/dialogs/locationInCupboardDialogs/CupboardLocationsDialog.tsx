@@ -1,25 +1,35 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Modal } from "../common/Modal";
-import { locationInCupboardService, locationService } from "@/services";
-import { unwrap } from "@/services/errors";
-import { qk } from "@/lib/queryKeys";
+import ErrorBanner from "@/components/ErrorBanner";
+import { DeleteButton, EditButton } from "@/components/TableActions";
 import {
 	useLocations,
 	useLocationsInCupboards,
 } from "@/hooks/queries/entityQueries";
+import { makeConfirmHandler, useEntityCrud } from "@/hooks/useEntityCrud";
+import { qk } from "@/lib/queryKeys";
+import { locationInCupboardService, locationService } from "@/services";
+import { unwrap } from "@/services/errors";
 import {
 	ILocationAdd,
 	ILocationInCupboard,
 	ILocationInCupboardAdd,
 	ILocationInCupboardWithNames,
 } from "@/types/domain/DomainTypes";
+import { EntityDeleteDialog } from "../common/EntityDeleteDialog";
+import { EntityEditDialog } from "../common/EntityEditDialog";
 import { EntityFormDialog } from "../common/EntityFormDialog";
+import { Modal } from "../common/Modal";
 import { locationFormConfig } from "../entityConfigs/location";
-import { CreateLocationInCupboardDialog } from "./CreateLocationInCupboardDialog";
-import { EditLocationInCupboardDialog } from "./EditLocationInCupboardDialog";
-import { DeleteLocationInCupboardDialog } from "./DeleteLocationInCupboardDialog";
+import {
+	LocationInCupboardForm,
+	locationInCupboardDeleteSummary,
+	locationInCupboardFormConfig,
+	locationInCupboardToForm,
+	locationInCupboardToUpdate,
+	locationsToOptions,
+} from "../entityConfigs/locationInCupboard";
 
 interface CupboardLocationsDialogProps {
 	open: boolean;
@@ -45,16 +55,19 @@ export const CupboardLocationsDialog = ({
 	);
 	const records = useMemo(() => linksQuery.data ?? [], [linksQuery.data]);
 	const listLoading = locationsQuery.isLoading || linksQuery.isLoading;
-	const listError = locationsQuery.isError || linksQuery.isError;
+	const listError = locationsQuery.error || linksQuery.error;
 
-	const invalidateLinks = () =>
-		queryClient.invalidateQueries({ queryKey: qk.locationsInCupboards() });
-
-	const createLink = useMutation({
-		mutationFn: (dto: ILocationInCupboardAdd) =>
-			unwrap(locationInCupboardService.addAsync(dto)),
-		onSuccess: invalidateLinks,
+	const crud = useEntityCrud<
+		ILocationInCupboardWithNames,
+		ILocationInCupboardAdd,
+		ILocationInCupboard
+	>({
+		service: locationInCupboardService,
+		invalidateKeys: [qk.locationsInCupboards()],
 	});
+
+	// Writes two entities, so it stays outside useEntityCrud's create/edit/
+	// delete trio.
 	const createLocationAndLink = useMutation({
 		mutationFn: async ({
 			dto,
@@ -77,31 +90,23 @@ export const CupboardLocationsDialog = ({
 				);
 			}
 		},
-		onSuccess: invalidateLinks,
+		onSuccess: crud.invalidate,
 		// The location exists even when the link step failed, so refresh
 		// qk.locations() regardless of outcome.
 		onSettled: () =>
 			queryClient.invalidateQueries({ queryKey: qk.locations() }),
 	});
-	const editLink = useMutation({
-		mutationFn: (dto: ILocationInCupboard) =>
-			unwrap(locationInCupboardService.updateAsync(dto)),
-		onSuccess: invalidateLinks,
-	});
-	const deleteLink = useMutation({
-		mutationFn: (id: string) =>
-			unwrap(locationInCupboardService.deleteAsync(id)),
-		onSuccess: invalidateLinks,
-	});
 
-	const [showCreate, setShowCreate] = useState(false);
 	const [showCreateLocation, setShowCreateLocation] = useState(false);
-	const [showEdit, setShowEdit] = useState(false);
-	const [showDelete, setShowDelete] = useState(false);
-	const [entryToEdit, setEntryToEdit] =
-		useState<ILocationInCupboardWithNames | null>(null);
-	const [entryToDelete, setEntryToDelete] =
-		useState<ILocationInCupboardWithNames | null>(null);
+
+	const handleCreateLocation = makeConfirmHandler(
+		(dto: ILocationAdd) =>
+			createLocationAndLink.mutateAsync({
+				dto,
+				cupboardId: cupboard!.id,
+			}),
+		() => setShowCreateLocation(false),
+	);
 
 	// Locations linked to *any* cupboard are unavailable, not just this one's.
 	const usedLocationIds = useMemo(
@@ -133,54 +138,23 @@ export const CupboardLocationsDialog = ({
 			allLocations.filter(
 				(l) =>
 					!usedLocationIds.has(l.id) ||
-					l.id === entryToEdit?.locationId,
+					l.id === crud.entityToEdit?.locationId,
 			),
-		[allLocations, usedLocationIds, entryToEdit],
+		[allLocations, usedLocationIds, crud.entityToEdit],
 	);
 
-	const handleCreate = async (dto: ILocationInCupboardAdd) => {
-		try {
-			await createLink.mutateAsync(dto);
-			setShowCreate(false);
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
-	};
-
-	const handleCreateLocation = async (dto: ILocationAdd) => {
-		if (!cupboard) return;
-		try {
-			await createLocationAndLink.mutateAsync({
-				dto,
-				cupboardId: cupboard.id,
-			});
-			setShowCreateLocation(false);
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
-	};
-
-	const handleEdit = async (dto: ILocationInCupboard) => {
-		try {
-			await editLink.mutateAsync(dto);
-			setShowEdit(false);
-			setEntryToEdit(null);
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
-	};
-
-	const handleDelete = async (id: string) => {
-		try {
-			await deleteLink.mutateAsync(id);
-			setShowDelete(false);
-			setEntryToDelete(null);
-		} catch (error) {
-			return { error: (error as Error).message };
-		}
-	};
+	const createOptions = useMemo(
+		() => ({ locations: locationsToOptions(availableForCreate) }),
+		[availableForCreate],
+	);
+	const editOptions = useMemo(
+		() => ({ locations: locationsToOptions(availableForEdit) }),
+		[availableForEdit],
+	);
 
 	if (!cupboard) return null;
+
+	const staticValues = { cupboardCodeName: cupboard.codeName };
 
 	return (
 		<>
@@ -200,18 +174,14 @@ export const CupboardLocationsDialog = ({
 					</button>
 					<button
 						type="button"
-						onClick={() => setShowCreate(true)}
+						onClick={crud.openCreate}
 						className="bg-[#ff9800] hover:bg-[#f0941d] text-white font-medium px-4 py-2 rounded-full text-sm transition-colors duration-150"
 					>
 						{tCommon("CreateNewLink")}
 					</button>
 				</div>
 
-				{listError && (
-					<div className="mb-4 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
-						{tCommon("LoadFailed")}
-					</div>
-				)}
+				<ErrorBanner error={listError} />
 
 				<div className="bg-[#efefef] rounded-2xl p-3 max-h-[50vh] overflow-y-auto">
 					{listLoading ? (
@@ -233,26 +203,16 @@ export const CupboardLocationsDialog = ({
 										{entry.locationName}
 									</span>
 									<div className="flex gap-2 shrink-0">
-										<button
-											type="button"
-											onClick={() => {
-												setEntryToEdit(entry);
-												setShowEdit(true);
-											}}
-											className="text-sm font-medium py-1.5 px-3 rounded-lg bg-[#e3f2fd] hover:bg-blue-100 text-[#50b3f1] transition-colors"
-										>
-											{tCommon("EditLink")}
-										</button>
-										<button
-											type="button"
-											onClick={() => {
-												setEntryToDelete(entry);
-												setShowDelete(true);
-											}}
-											className="text-sm font-medium py-1.5 px-3 rounded-lg bg-[#ffebee] hover:bg-red-100 text-[#ea6e6c] transition-colors"
-										>
-											{tCommon("DeleteLink")}
-										</button>
+										<EditButton
+											size="sm"
+											label={tCommon("EditLink")}
+											onClick={() => crud.openEdit(entry)}
+										/>
+										<DeleteButton
+											size="sm"
+											label={tCommon("DeleteLink")}
+											onClick={() => crud.openDelete(entry)}
+										/>
 									</div>
 								</div>
 							))}
@@ -261,14 +221,20 @@ export const CupboardLocationsDialog = ({
 				</div>
 			</Modal>
 
-			<CreateLocationInCupboardDialog
-				open={showCreate}
-				cupboardId={cupboard.id}
-				cupboardCodeName={cupboard.codeName}
-				availableLocations={availableForCreate}
-				onClose={() => setShowCreate(false)}
-				onConfirm={handleCreate}
-				isLoading={createLink.isPending}
+			<EntityFormDialog
+				open={crud.showCreate}
+				mode="create"
+				config={locationInCupboardFormConfig}
+				options={createOptions}
+				staticValues={staticValues}
+				onClose={crud.createDialogProps.onClose}
+				onConfirm={(form: LocationInCupboardForm) =>
+					crud.handleCreate({
+						locationId: form.locationId,
+						cupboardId: cupboard.id,
+					})
+				}
+				isLoading={crud.createMutation.isPending}
 			/>
 
 			<EntityFormDialog
@@ -280,28 +246,20 @@ export const CupboardLocationsDialog = ({
 				isLoading={createLocationAndLink.isPending}
 			/>
 
-			<EditLocationInCupboardDialog
-				open={showEdit}
-				entry={entryToEdit}
-				cupboardCodeName={cupboard.codeName}
-				availableLocations={availableForEdit}
-				onClose={() => {
-					setShowEdit(false);
-					setEntryToEdit(null);
-				}}
-				onConfirm={handleEdit}
-				isLoading={editLink.isPending}
+			<EntityEditDialog
+				config={locationInCupboardFormConfig}
+				toForm={locationInCupboardToForm}
+				toUpdate={locationInCupboardToUpdate}
+				options={editOptions}
+				staticValues={staticValues}
+				{...crud.editDialogProps}
 			/>
 
-			<DeleteLocationInCupboardDialog
-				open={showDelete}
-				entry={entryToDelete}
-				onClose={() => {
-					setShowDelete(false);
-					setEntryToDelete(null);
-				}}
-				onConfirm={handleDelete}
-				isLoading={deleteLink.isPending}
+			<EntityDeleteDialog
+				namespace="locationincupboard"
+				singularKey="LocationInCupboardSingular"
+				summaryFields={locationInCupboardDeleteSummary}
+				{...crud.deleteDialogProps}
 			/>
 		</>
 	);

@@ -1,5 +1,6 @@
 import {
 	ILocation,
+	ILocationInCupboard,
 	ILocationInCupboardWithNames,
 } from "@/types/domain/DomainTypes";
 import {
@@ -32,6 +33,21 @@ export const locationInCupboardFormConfig: FormDialogConfig<LocationInCupboardFo
 
 export const locationsToOptions = (locations: ILocation[]): SelectOption[] =>
 	toOptions(locations, (location) => location.locationName);
+
+export const locationInCupboardToForm = (
+	entry: ILocationInCupboardWithNames,
+): LocationInCupboardForm => ({ locationId: entry.locationId });
+
+// The cupboard is fixed while editing — carry it over rather than letting the
+// default `{ id, ...form }` merge drop it.
+export const locationInCupboardToUpdate = (
+	form: LocationInCupboardForm,
+	entity: ILocationInCupboardWithNames,
+): ILocationInCupboard => ({
+	id: entity.id,
+	cupboardId: entity.cupboardId,
+	locationId: form.locationId,
+});
 
 export const locationInCupboardDeleteSummary: DeleteSummaryField<ILocationInCupboardWithNames>[] =
 	[
