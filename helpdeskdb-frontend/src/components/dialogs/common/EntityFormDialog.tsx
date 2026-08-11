@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next";
 import {
 	FieldValues,
 	Path,
+	PathValue,
 	RegisterOptions,
 	SubmitHandler,
 	useForm,
 } from "react-hook-form";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import ErrorBanner from "@/components/ErrorBanner";
 import { Modal } from "./Modal";
 import { ModalFooter } from "./ModalFooter";
@@ -32,6 +34,10 @@ interface EntityFormDialogProps<TForm extends FieldValues> {
 	options?: Record<string, SelectOption[]>;
 	// Values for kind:"readonly" fields, keyed by valueKey.
 	staticValues?: Record<string, string>;
+	// Opt-in: a keyboard-wedge barcode scanner writes the decoded value into
+	// this field while the dialog is open. The matching input also gets
+	// data-barcode-scan-target so a scan replaces its content when it's focused.
+	scanField?: Path<TForm>;
 	onClose: () => void;
 	onConfirm: (data: TForm) => ConfirmResult;
 	isLoading: boolean;
@@ -45,6 +51,7 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 	initialValues,
 	options,
 	staticValues,
+	scanField,
 	onClose,
 	onConfirm,
 	isLoading,
@@ -59,9 +66,26 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 		register,
 		handleSubmit,
 		reset,
+		setValue,
 		formState: { errors, isSubmitting },
 	} = useForm<TForm>({
 		defaultValues: config.defaultValues,
+	});
+
+	// Opt-in barcode scanning: drop the decoded burst into `scanField`. The
+	// page-level scanner is disabled while any dialog is open, so this is the
+	// only active listener. Gated by the prop, so other dialogs attach nothing.
+	useBarcodeScanner({
+		enabled: open && !!scanField,
+		onScan: (code) => {
+			if (scanField) {
+				setValue(
+					scanField,
+					code as PathValue<TForm, typeof scanField>,
+					{ shouldValidate: true, shouldDirty: true },
+				);
+			}
+		},
 	});
 
 	// Edit mode: populate the form from the entity being edited — once per opening.
@@ -268,6 +292,11 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 												? tEntity(field.placeholderKey)
 												: undefined
 										}
+										// A scan while this field is focused replaces
+										// its value instead of being ignored.
+										{...(field.name === scanField
+											? { "data-barcode-scan-target": "" }
+											: {})}
 										{...register(
 											field.name,
 											buildRules(fieldLabel, field.validation),

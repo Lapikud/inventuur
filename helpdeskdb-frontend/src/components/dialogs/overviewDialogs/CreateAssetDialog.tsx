@@ -58,6 +58,7 @@ export const CreateAssetDialog = ({
 			mode="create"
 			config={createAssetFormConfig}
 			options={options}
+			scanField="barcode"
 			onClose={onClose}
 			onConfirm={handleConfirm}
 			isLoading={isLoading}
