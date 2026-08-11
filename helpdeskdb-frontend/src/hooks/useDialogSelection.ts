@@ -20,7 +20,7 @@ const useSetQueryParam = () => {
 			} else {
 				params.set(key, value);
 			}
-			router.push(`${window.location.pathname}?${params.toString()}`, {
+			router.replace(`${window.location.pathname}?${params.toString()}`, {
 				scroll: false,
 			});
 		},
