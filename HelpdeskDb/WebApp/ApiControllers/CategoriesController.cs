@@ -93,7 +93,8 @@ namespace WebApp.ApiControllers
             }
             
             var categories = await _bll.CategoryService.AllAsync();
-            if (categories.Any(c => c.CategoryName.Equals(category.CategoryName, StringComparison.OrdinalIgnoreCase)))
+            if (categories.Any(c => c.Id != category.Id &&
+                    c.CategoryName.Equals(category.CategoryName, StringComparison.OrdinalIgnoreCase)))
             {
                 return BadRequest(new Message(App.Resources.Errors.ValidationErrors.CategoryNameExists));
             }

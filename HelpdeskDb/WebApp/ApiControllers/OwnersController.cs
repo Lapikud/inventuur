@@ -94,7 +94,8 @@ namespace WebApp.ApiControllers
             }
             
             var owners = await _bll.OwnerService.AllAsync();
-            if (owners.Any(c => c.OwnerName.Equals(owner.OwnerName, StringComparison.OrdinalIgnoreCase)))
+            if (owners.Any(c => c.Id != owner.Id &&
+                    c.OwnerName.Equals(owner.OwnerName, StringComparison.OrdinalIgnoreCase)))
             {
                 return BadRequest(new Message(App.Resources.Errors.ValidationErrors.OwnerNameExists));
             }
