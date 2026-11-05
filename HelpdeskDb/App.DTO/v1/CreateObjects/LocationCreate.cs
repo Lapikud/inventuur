@@ -37,4 +37,8 @@ public class LocationCreate
         ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.ValueBetween),
         ErrorMessageResourceType = typeof(Base.Resources.Errors.ValidationErrors))]
     public int Column { get; set; }
+
+    public Guid RoomId { get; set; }
+
+    public Guid? CupboardId { get; set; }
 }

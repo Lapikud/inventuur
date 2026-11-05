@@ -21,16 +21,16 @@ public class AppUOWTest : IClassFixture<TestDatabaseFixture>
         Assert.IsType<CategoryRepository>(uow.CategoryRepository);
         Assert.IsType<CategoryAssetsRepository>(uow.CategoryAssetsRepository);
         Assert.IsType<CupboardRepository>(uow.CupboardRepository);
-        Assert.IsType<CupboardInRoomRepository>(uow.CupboardInRoomRepository);
         Assert.IsType<LocationRepository>(uow.LocationRepository);
-        Assert.IsType<LocationInCupboardRepository>(uow.LocationInCupboardRepository);
-        Assert.IsType<LocationAssetsRepository>(uow.LocationAssetsRepository);
         Assert.IsType<OwnerRepository>(uow.OwnerRepository);
         Assert.IsType<OwnerAssetsRepository>(uow.OwnerAssetsRepository);
         Assert.IsType<RemovedAssetsRepository>(uow.RemovedAssetsRepository);
         Assert.IsType<RoomRepository>(uow.RoomRepository);
         Assert.IsType<AppUserRoleRepository>(uow.AppUserRoleRepository);
         Assert.IsType<AssetReservationRepository>(uow.AssetReservationRepository);
+        Assert.IsType<TagRepository>(uow.TagRepository);
+        Assert.IsType<AssetTagRepository>(uow.AssetTagRepository);
+        Assert.IsType<AssetPhotoRepository>(uow.AssetPhotoRepository);
     }
 
     [Fact]
@@ -42,16 +42,16 @@ public class AppUOWTest : IClassFixture<TestDatabaseFixture>
         Assert.Same(uow.CategoryRepository, uow.CategoryRepository);
         Assert.Same(uow.CategoryAssetsRepository, uow.CategoryAssetsRepository);
         Assert.Same(uow.CupboardRepository, uow.CupboardRepository);
-        Assert.Same(uow.CupboardInRoomRepository, uow.CupboardInRoomRepository);
         Assert.Same(uow.LocationRepository, uow.LocationRepository);
-        Assert.Same(uow.LocationInCupboardRepository, uow.LocationInCupboardRepository);
-        Assert.Same(uow.LocationAssetsRepository, uow.LocationAssetsRepository);
         Assert.Same(uow.OwnerRepository, uow.OwnerRepository);
         Assert.Same(uow.OwnerAssetsRepository, uow.OwnerAssetsRepository);
         Assert.Same(uow.RemovedAssetsRepository, uow.RemovedAssetsRepository);
         Assert.Same(uow.RoomRepository, uow.RoomRepository);
         Assert.Same(uow.AppUserRoleRepository, uow.AppUserRoleRepository);
         Assert.Same(uow.AssetReservationRepository, uow.AssetReservationRepository);
+        Assert.Same(uow.TagRepository, uow.TagRepository);
+        Assert.Same(uow.AssetTagRepository, uow.AssetTagRepository);
+        Assert.Same(uow.AssetPhotoRepository, uow.AssetPhotoRepository);
     }
 
     [Fact]

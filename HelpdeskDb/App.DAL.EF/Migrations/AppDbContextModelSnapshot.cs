@@ -17,7 +17,7 @@ namespace App.DAL.EF.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -62,16 +62,94 @@ namespace App.DAL.EF.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<bool>("HasPhoto")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastAuditAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastAuditBy")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("SerialNumber")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("SysNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("Normal");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("App.Domain.AssetPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("SysNotes")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Assets");
+                    b.HasIndex("AssetId")
+                        .IsUnique();
+
+                    b.ToTable("AssetPhotos");
                 });
 
             modelBuilder.Entity("App.Domain.AssetReservation", b =>
@@ -125,6 +203,51 @@ namespace App.DAL.EF.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AssetReservations");
+                });
+
+            modelBuilder.Entity("App.Domain.AssetTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SysNotes")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TagId");
+
+                    b.HasIndex("AssetId", "TagId")
+                        .IsUnique();
+
+                    b.ToTable("AssetTags");
                 });
 
             modelBuilder.Entity("App.Domain.Category", b =>
@@ -247,48 +370,6 @@ namespace App.DAL.EF.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("SysNotes")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Cupboards");
-                });
-
-            modelBuilder.Entity("App.Domain.CupboardInRoom", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("ChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid>("CupboardId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
@@ -297,12 +378,11 @@ namespace App.DAL.EF.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CodeName");
+
                     b.HasIndex("RoomId");
 
-                    b.HasIndex("CupboardId", "RoomId")
-                        .IsUnique();
-
-                    b.ToTable("CupboardsInRooms");
+                    b.ToTable("Cupboards");
                 });
 
             modelBuilder.Entity("App.Domain.Identity.AppRefreshToken", b =>
@@ -373,6 +453,9 @@ namespace App.DAL.EF.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("text");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
@@ -433,10 +516,16 @@ namespace App.DAL.EF.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<Guid?>("CupboardId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("LocationName")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("ShelfNum")
                         .HasColumnType("integer");
@@ -446,97 +535,13 @@ namespace App.DAL.EF.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations");
-                });
-
-            modelBuilder.Entity("App.Domain.LocationAssets", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AssetId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("ChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid>("LocationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SysNotes")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.HasIndex("LocationId", "AssetId")
-                        .IsUnique();
-
-                    b.ToTable("LocationAssetsCollection");
-                });
-
-            modelBuilder.Entity("App.Domain.LocationInCupboard", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("ChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<Guid>("CupboardId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("LocationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SysNotes")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
                     b.HasIndex("CupboardId");
 
-                    b.HasIndex("LocationId", "CupboardId")
-                        .IsUnique();
+                    b.HasIndex("LocationName");
 
-                    b.ToTable("LocationsInCupboards");
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("App.Domain.Owner", b =>
@@ -717,6 +722,69 @@ namespace App.DAL.EF.Migrations
                     b.ToTable("Rooms");
                 });
 
+            modelBuilder.Entity("App.Domain.Tag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SysNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TagName")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TagName")
+                        .IsUnique();
+
+                    b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("App.Domain.Asset", b =>
+                {
+                    b.HasOne("App.Domain.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Location");
+                });
+
+            modelBuilder.Entity("App.Domain.AssetPhoto", b =>
+                {
+                    b.HasOne("App.Domain.Asset", "Asset")
+                        .WithOne("AssetPhoto")
+                        .HasForeignKey("App.Domain.AssetPhoto", "AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+                });
+
             modelBuilder.Entity("App.Domain.AssetReservation", b =>
                 {
                     b.HasOne("App.Domain.Asset", "Asset")
@@ -734,6 +802,25 @@ namespace App.DAL.EF.Migrations
                     b.Navigation("Asset");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("App.Domain.AssetTag", b =>
+                {
+                    b.HasOne("App.Domain.Asset", "Asset")
+                        .WithMany("AssetTags")
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("App.Domain.Tag", "Tag")
+                        .WithMany("AssetTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("App.Domain.CategoryAssets", b =>
@@ -755,21 +842,13 @@ namespace App.DAL.EF.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("App.Domain.CupboardInRoom", b =>
+            modelBuilder.Entity("App.Domain.Cupboard", b =>
                 {
-                    b.HasOne("App.Domain.Cupboard", "Cupboard")
-                        .WithMany("CupboardsInRooms")
-                        .HasForeignKey("CupboardId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("App.Domain.Room", "Room")
-                        .WithMany("CupboardsInRooms")
+                        .WithMany("Cupboards")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Cupboard");
 
                     b.Navigation("Room");
                 });
@@ -804,42 +883,22 @@ namespace App.DAL.EF.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("App.Domain.LocationAssets", b =>
-                {
-                    b.HasOne("App.Domain.Asset", "Asset")
-                        .WithMany("LocationsAssetsCollection")
-                        .HasForeignKey("AssetId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("App.Domain.Location", "Location")
-                        .WithMany("LocationsAssetsCollection")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Asset");
-
-                    b.Navigation("Location");
-                });
-
-            modelBuilder.Entity("App.Domain.LocationInCupboard", b =>
+            modelBuilder.Entity("App.Domain.Location", b =>
                 {
                     b.HasOne("App.Domain.Cupboard", "Cupboard")
-                        .WithMany("LocationsInCupboards")
+                        .WithMany("Locations")
                         .HasForeignKey("CupboardId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("App.Domain.Location", "Location")
-                        .WithMany("LocationsInCupboards")
-                        .HasForeignKey("LocationId")
+                    b.HasOne("App.Domain.Room", "Room")
+                        .WithMany("Locations")
+                        .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Cupboard");
 
-                    b.Navigation("Location");
+                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("App.Domain.OwnerAssets", b =>
@@ -874,11 +933,13 @@ namespace App.DAL.EF.Migrations
 
             modelBuilder.Entity("App.Domain.Asset", b =>
                 {
+                    b.Navigation("AssetPhoto");
+
                     b.Navigation("AssetReservations");
 
-                    b.Navigation("CategoryAssetsCollection");
+                    b.Navigation("AssetTags");
 
-                    b.Navigation("LocationsAssetsCollection");
+                    b.Navigation("CategoryAssetsCollection");
 
                     b.Navigation("OwnerAssets");
 
@@ -892,9 +953,7 @@ namespace App.DAL.EF.Migrations
 
             modelBuilder.Entity("App.Domain.Cupboard", b =>
                 {
-                    b.Navigation("CupboardsInRooms");
-
-                    b.Navigation("LocationsInCupboards");
+                    b.Navigation("Locations");
                 });
 
             modelBuilder.Entity("App.Domain.Identity.AppRole", b =>
@@ -911,13 +970,6 @@ namespace App.DAL.EF.Migrations
                     b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("App.Domain.Location", b =>
-                {
-                    b.Navigation("LocationsAssetsCollection");
-
-                    b.Navigation("LocationsInCupboards");
-                });
-
             modelBuilder.Entity("App.Domain.Owner", b =>
                 {
                     b.Navigation("OwnerAssets");
@@ -925,7 +977,14 @@ namespace App.DAL.EF.Migrations
 
             modelBuilder.Entity("App.Domain.Room", b =>
                 {
-                    b.Navigation("CupboardsInRooms");
+                    b.Navigation("Cupboards");
+
+                    b.Navigation("Locations");
+                });
+
+            modelBuilder.Entity("App.Domain.Tag", b =>
+                {
+                    b.Navigation("AssetTags");
                 });
 #pragma warning restore 612, 618
         }

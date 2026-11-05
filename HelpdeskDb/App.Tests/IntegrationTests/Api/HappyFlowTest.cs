@@ -122,10 +122,10 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
         Assert.Equal("Cupboard 2", responseData.CupboardName);
         Assert.Equal(2, responseData.ShelfNum);
         Assert.Equal(2, responseData.Column);
-        Assert.InRange(responseData.AddedAt,
-            DateTime.UtcNow - TimeSpan.FromSeconds(10),
-            DateTime.UtcNow + TimeSpan.FromSeconds(10)
-        );
+        // The asset's AddedAt comes from the placement location's creation time.
+        var locationInDb = await _dbContext.Locations.AsNoTracking()
+            .FirstAsync(l => l.Id == Location2, ct);
+        Assert.Equal(locationInDb.CreatedAt, responseData.AddedAt);
 
         var assetInDb = await LoadAssetWithRelations(responseData.Id);
         Assert.NotNull(assetInDb);
@@ -134,9 +134,8 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
         Assert.NotEmpty(assetInDb.CategoryAssetsCollection);
         Assert.NotNull(assetInDb.CategoryAssetsCollection.First().Category);
 
-        Assert.NotNull(assetInDb.LocationsAssetsCollection);
-        Assert.NotEmpty(assetInDb.LocationsAssetsCollection);
-        Assert.NotNull(assetInDb.LocationsAssetsCollection.First().Location);
+        Assert.Equal(Location2, assetInDb.LocationId);
+        Assert.NotNull(assetInDb.Location);
 
         Assert.NotNull(assetInDb.OwnerAssets);
         Assert.NotEmpty(assetInDb.OwnerAssets);
@@ -147,13 +146,10 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
         Assert.Equal("BC-TEST-001", assetInDb.Barcode);
         Assert.Equal("Category 1", assetInDb.CategoryAssetsCollection.First().Category!.CategoryName);
         Assert.Equal(_factory.GetUsername, assetInDb.OwnerAssets.First().Owner!.OwnerName);
-        Assert.Equal("Room 2", assetInDb.LocationsAssetsCollection!.First()
-            .Location!.LocationsInCupboards!.First()
-            .Cupboard!.CupboardsInRooms!.First().Room!.RoomName);
-        Assert.Equal("Cupboard 2", assetInDb.LocationsAssetsCollection!.First()
-            .Location!.LocationsInCupboards!.First().Cupboard!.CodeName);
-        Assert.Equal(2, assetInDb.LocationsAssetsCollection.First().Location!.ShelfNum);
-        Assert.Equal(2, assetInDb.LocationsAssetsCollection.First().Location!.Column);
+        Assert.Equal("Room 2", assetInDb.Location!.Room!.RoomName);
+        Assert.Equal("Cupboard 2", assetInDb.Location!.Cupboard!.CodeName);
+        Assert.Equal(2, assetInDb.Location!.ShelfNum);
+        Assert.Equal(2, assetInDb.Location!.Column);
 
         Assert.InRange(assetInDb.CreatedAt,
             DateTime.UtcNow - TimeSpan.FromSeconds(10),
@@ -177,7 +173,6 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
 
         var assetInDb = await _dbContext.Assets
             .Include(a => a.CategoryAssetsCollection)
-            .Include(a => a.LocationsAssetsCollection)
             .Include(a => a.OwnerAssets)
             .FirstOrDefaultAsync(a => a.Id.Equals(asset.Id), ct);
 
@@ -198,7 +193,6 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
                 OwnerAssetsId = assetInDb.OwnerAssets!.First().Id,
                 SelectedOwnerId = _ownerId,
 
-                LocationAssetsId = assetInDb.LocationsAssetsCollection!.First().Id,
                 SelectedLocationId = Location2,
             }, ct);
 
@@ -213,10 +207,9 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
         Assert.Equal("BC-EDIT-001", assetInDb.Barcode);
         Assert.Equal("Category 1", assetInDb.CategoryAssetsCollection!.First().Category!.CategoryName);
         Assert.Equal(_factory.GetUsername, assetInDb.OwnerAssets!.First().Owner!.OwnerName);
-        Assert.Equal("Room 2", assetInDb.LocationsAssetsCollection!.First()
-            .Location!.LocationsInCupboards!.First().Cupboard!.CupboardsInRooms!.First().Room!.RoomName);
-        Assert.Equal("Cupboard 2", assetInDb.LocationsAssetsCollection!.First()
-            .Location!.LocationsInCupboards!.First().Cupboard!.CodeName);
+        Assert.Equal(Location2, assetInDb.LocationId);
+        Assert.Equal("Room 2", assetInDb.Location!.Room!.RoomName);
+        Assert.Equal("Cupboard 2", assetInDb.Location!.Cupboard!.CodeName);
     }
 
     [Fact]
@@ -429,12 +422,10 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
         _dbContext.Assets
             .Include(a => a.CategoryAssetsCollection)!
             .ThenInclude(x => x.Category)
-            .Include(a => a.LocationsAssetsCollection)!
-            .ThenInclude(la => la.Location)
-            .ThenInclude(l => l!.LocationsInCupboards)!
-            .ThenInclude(lc => lc.Cupboard)
-            .ThenInclude(c => c!.CupboardsInRooms)!
-            .ThenInclude(cr => cr.Room)
+            .Include(a => a.Location)!
+            .ThenInclude(l => l!.Room)
+            .Include(a => a.Location)!
+            .ThenInclude(l => l!.Cupboard)
             .Include(a => a.OwnerAssets)!
             .ThenInclude(x => x.Owner)
             .FirstOrDefaultAsync(a => a.Id.Equals(assetId));
@@ -446,17 +437,13 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
         {
             Id = Guid.NewGuid(),
             AssetName = "AssetName-" + Guid.NewGuid().ToString("N")[..8],
-            Comment = "Comment"
+            Comment = "Comment",
+            LocationId = Location1
         };
         var categoryAsset = new Domain.CategoryAssets
         {
             AssetId = asset.Id,
             CategoryId = Category2,
-        };
-        var locationAsset = new Domain.LocationAssets
-        {
-            AssetId = asset.Id,
-            LocationId = Location1
         };
         var ownerAsset = new Domain.OwnerAssets
         {
@@ -466,7 +453,6 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
 
         _dbContext.Assets.Add(asset);
         _dbContext.CategoryAssetsCollection.Add(categoryAsset);
-        _dbContext.LocationAssetsCollection.Add(locationAsset);
         _dbContext.OwnerAssets.Add(ownerAsset);
 
         _dbContext.SaveChanges();
@@ -474,12 +460,10 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
         return _dbContext.Assets
             .Include(a => a.OwnerAssets)!
             .ThenInclude(oa => oa.Owner)
-            .Include(a => a.LocationsAssetsCollection)!
-            .ThenInclude(la => la.Location)
-            .ThenInclude(l => l!.LocationsInCupboards)!
-            .ThenInclude(lc => lc.Cupboard)
-            .ThenInclude(c => c!.CupboardsInRooms)!
-            .ThenInclude(cr => cr.Room)
+            .Include(a => a.Location)!
+            .ThenInclude(l => l!.Room)
+            .Include(a => a.Location)!
+            .ThenInclude(l => l!.Cupboard)
             .Include(a => a.CategoryAssetsCollection)!
             .ThenInclude(ca => ca.Category)
             .Include(a => a.AssetReservations)
@@ -491,16 +475,11 @@ public class HappyFlowTest : IClassFixture<CustomWebApplicationFactory<Program>>
                 CategoryName = a.CategoryAssetsCollection!
                     .Select(ca => ca.Category!.CategoryName).First(),
                 OwnerName = a.OwnerAssets!.Select(oa => oa.Owner!.OwnerName).First(),
-                RoomName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .SelectMany(lc => lc.Cupboard!.CupboardsInRooms!)
-                    .Select(cr => cr.Room!.RoomName).First(),
-                CupboardName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .Select(lc => lc.Cupboard!.CodeName).First(),
-                ShelfNum = a.LocationsAssetsCollection!.Select(la => la.Location!.ShelfNum).FirstOrDefault(),
-                Column = a.LocationsAssetsCollection!.Select(la => la.Location!.Column).FirstOrDefault(),
-                AddedAt = a.LocationsAssetsCollection!.Select(la => la.CreatedAt).FirstOrDefault()
+                RoomName = a.Location!.Room!.RoomName,
+                CupboardName = a.Location!.Cupboard!.CodeName,
+                ShelfNum = a.Location!.ShelfNum,
+                Column = a.Location!.Column,
+                AddedAt = a.Location!.CreatedAt
             }).First();
     }
 

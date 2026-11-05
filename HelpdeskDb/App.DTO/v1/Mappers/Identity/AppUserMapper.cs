@@ -12,6 +12,7 @@ public class AppUserMapper : IIdentityMapper<App.DTO.v1.Identity.AppUser, App.Do
         {
             Id = entity.Id,
             Username = entity!.Username,
+            DisplayName = entity.DisplayName,
         };
         return res;
     }
@@ -23,6 +24,7 @@ public class AppUserMapper : IIdentityMapper<App.DTO.v1.Identity.AppUser, App.Do
         {
             Id = entity.Id,
             Username = entity.Username,
+            DisplayName = entity.DisplayName,
         };
         return res;
     }

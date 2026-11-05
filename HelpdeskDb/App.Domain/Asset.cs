@@ -36,9 +36,33 @@ public class Asset : BaseEntity
         ResourceType = typeof(App.Resources.Domain.Asset))]
     public string? Barcode { get; set; }
 
-    public ICollection<LocationAssets>? LocationsAssetsCollection { get; set; }
+    // Short unique code printed on the QR sticker, e.g. inv.ee/a/xy4t2.
+    [MaxLength(16,
+        ErrorMessageResourceName = nameof(ValidationErrors.MaxLengthValidationError),
+        ErrorMessageResourceType = typeof(ValidationErrors))]
+    public string? Slug { get; set; }
+
+    public AssetVisibility Visibility { get; set; } = AssetVisibility.Normal;
+
+    public bool HasPhoto { get; set; }
+
+    public DateTime? LastAuditAt { get; set; }
+
+    [MaxLength(64)]
+    public string? LastAuditBy { get; set; }
+
+    /// <summary>
+    /// Where the asset physically is — a direct foreign key, no junction
+    /// table: the room/cupboard names resolve through the join at query time.
+    /// Nullable until the asset gets placed.
+    /// </summary>
+    public Guid? LocationId { get; set; }
+    public Location? Location { get; set; }
+
     public ICollection<OwnerAssets>? OwnerAssets { get; set; }
     public ICollection<CategoryAssets>? CategoryAssetsCollection { get; set; }
     public ICollection<RemovedAssets>? RemovedAssetsCollection { get; set; }
     public ICollection<AssetReservation>? AssetReservations { get; set; }
+    public ICollection<AssetTag>? AssetTags { get; set; }
+    public AssetPhoto? AssetPhoto { get; set; }
 }

@@ -39,4 +39,10 @@ public class Location: IDomainId
         ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.ValueBetween),
         ErrorMessageResourceType = typeof(Base.Resources.Errors.ValidationErrors))]
     public int Column { get; set; }
+
+    /// <summary>Room this location is in — required.</summary>
+    public Guid RoomId { get; set; }
+
+    /// <summary>Optional cupboard within the room; null for open room-level spots.</summary>
+    public Guid? CupboardId { get; set; }
 }

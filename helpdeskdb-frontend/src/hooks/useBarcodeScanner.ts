@@ -41,7 +41,12 @@ export function useBarcodeScanner({
 	const bufferRef = useRef("");
 	const lastKeyTimeRef = useRef(0);
 	const onScanRef = useRef(onScan);
-	onScanRef.current = onScan;
+
+	// Keep the latest callback without re-subscribing the key listener.
+	// Written in an effect (after render), never during render.
+	useEffect(() => {
+		onScanRef.current = onScan;
+	});
 
 	useEffect(() => {
 		if (!enabled) return;

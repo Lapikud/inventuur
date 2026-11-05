@@ -20,5 +20,8 @@
   "UserRoles": "Kasutaja rollid",
   "RefreshTokens": "Uuendustokenid",
   "UserManagement": "Kasutajahaldus",
-  "AssetReservations": "Vara broneerimised"
+  "AssetReservations": "Vara broneerimised",
+  "Tags": "Sildid",
+  "FooterForkedFromPrefix": "Forkitud projektist ",
+  "FooterForkedFromSuffix": " (autor Mark Perman)"
 }

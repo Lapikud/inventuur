@@ -17,6 +17,7 @@ public class AssetUOWMapperTest
     public void Map_DomainToDal_ShouldCopyScalarsAndCollections()
     {
         var assetId = Guid.NewGuid();
+        var locationId = Guid.NewGuid();
         var src = new Domain.Asset
         {
             Id = assetId,
@@ -24,9 +25,15 @@ public class AssetUOWMapperTest
             Comment = "comment",
             SerialNumber = "SN-111222333",
             Barcode = "BC-999999999",
-            LocationsAssetsCollection = new List<Domain.LocationAssets>
+            LocationId = locationId,
+            Location = new Domain.Location
             {
-                new() { Id = Guid.NewGuid(), AssetId = assetId, LocationId = Guid.NewGuid(), CreatedBy = "user" }
+                Id = locationId,
+                LocationName = "Shelf",
+                ShelfNum = 2,
+                Column = 3,
+                RoomId = Guid.NewGuid(),
+                CupboardId = Guid.NewGuid(),
             },
             OwnerAssets = new List<Domain.OwnerAssets>
             {
@@ -55,13 +62,20 @@ public class AssetUOWMapperTest
         Assert.Equal(src.Comment, dst.Comment);
         Assert.Equal(src.SerialNumber, dst.SerialNumber);
         Assert.Equal(src.Barcode, dst.Barcode);
-        Assert.Single(dst.LocationsAssetsCollection!);
+        Assert.Equal(src.LocationId, dst.LocationId);
+        Assert.NotNull(dst.Location);
+        Assert.Equal(src.Location!.Id, dst.Location!.Id);
+        Assert.Equal(src.Location!.LocationName, dst.Location!.LocationName);
+        Assert.Equal(src.Location!.ShelfNum, dst.Location!.ShelfNum);
+        Assert.Equal(src.Location!.Column, dst.Location!.Column);
+        Assert.Equal(src.Location!.RoomId, dst.Location!.RoomId);
+        Assert.Equal(src.Location!.CupboardId, dst.Location!.CupboardId);
+        Assert.Null(dst.Location!.Room);
+        Assert.Null(dst.Location!.Cupboard);
         Assert.Single(dst.OwnerAssets!);
         Assert.Single(dst.CategoryAssetsCollection!);
         Assert.Single(dst.RemovedAssetsCollection!);
         Assert.Single(dst.AssetReservations!);
-        Assert.All(dst.LocationsAssetsCollection!, la => Assert.Null(la.Asset));
-        Assert.All(dst.LocationsAssetsCollection!, la => Assert.Null(la.Location));
         Assert.All(dst.OwnerAssets!, oa => Assert.Null(oa.Asset));
         Assert.All(dst.OwnerAssets!, oa => Assert.Null(oa.Owner));
         Assert.All(dst.CategoryAssetsCollection!, ca => Assert.Null(ca.Asset));
@@ -75,6 +89,7 @@ public class AssetUOWMapperTest
     public void Map_DalToDomain_ShouldCopyScalarsAndCollections()
     {
         var assetId = Guid.NewGuid();
+        var locationId = Guid.NewGuid();
         var src = new DalDto.Asset
         {
             Id = assetId,
@@ -82,9 +97,15 @@ public class AssetUOWMapperTest
             Comment = "comment",
             SerialNumber = "SN-111222333",
             Barcode = "BC-999999999",
-            LocationsAssetsCollection = new List<DalDto.LocationAssets>
+            LocationId = locationId,
+            Location = new DalDto.Location
             {
-                new() { Id = Guid.NewGuid(), AssetId = assetId, LocationId = Guid.NewGuid(), CreatedBy = "u" }
+                Id = locationId,
+                LocationName = "Shelf",
+                ShelfNum = 2,
+                Column = 3,
+                RoomId = Guid.NewGuid(),
+                CupboardId = Guid.NewGuid(),
             },
             OwnerAssets = new List<DalDto.OwnerAssets>
             {
@@ -113,13 +134,20 @@ public class AssetUOWMapperTest
         Assert.Equal(src.Comment, dst.Comment);
         Assert.Equal(src.SerialNumber, dst.SerialNumber);
         Assert.Equal(src.Barcode, dst.Barcode);
-        Assert.Single(dst.LocationsAssetsCollection!);
+        Assert.Equal(src.LocationId, dst.LocationId);
+        Assert.NotNull(dst.Location);
+        Assert.Equal(src.Location!.Id, dst.Location!.Id);
+        Assert.Equal(src.Location!.LocationName, dst.Location!.LocationName);
+        Assert.Equal(src.Location!.ShelfNum, dst.Location!.ShelfNum);
+        Assert.Equal(src.Location!.Column, dst.Location!.Column);
+        Assert.Equal(src.Location!.RoomId, dst.Location!.RoomId);
+        Assert.Equal(src.Location!.CupboardId, dst.Location!.CupboardId);
+        Assert.Null(dst.Location!.Room);
+        Assert.Null(dst.Location!.Cupboard);
         Assert.Single(dst.OwnerAssets!);
         Assert.Single(dst.CategoryAssetsCollection!);
         Assert.Single(dst.RemovedAssetsCollection!);
         Assert.Single(dst.AssetReservations!);
-        Assert.All(dst.LocationsAssetsCollection!, la => Assert.Null(la.Asset));
-        Assert.All(dst.LocationsAssetsCollection!, la => Assert.Null(la.Location));
         Assert.All(dst.OwnerAssets!, oa => Assert.Null(oa.Asset));
         Assert.All(dst.OwnerAssets!, oa => Assert.Null(oa.Owner));
         Assert.All(dst.CategoryAssetsCollection!, ca => Assert.Null(ca.Asset));

@@ -17,7 +17,8 @@ public class RoomRepository : BaseRepository<App.DAL.DTO.Room, App.Domain.Room>,
     {
         var query = GetQuery();
         query = query
-            .Include(r => r.CupboardsInRooms)
+            .Include(r => r.Cupboards)
+            .Include(r => r.Locations)
             .OrderBy(o => o.RoomName);
         return (await query.ToListAsync()).Select(e => Mapper.Map(e)!);
     }

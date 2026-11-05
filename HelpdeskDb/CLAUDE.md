@@ -188,4 +188,4 @@ Key variables in `.env`:
 
 JWT settings are under `JWTSecurity:` (Key, Issuer, Audience, ExpiresInSeconds). Refresh-token lifetime is not configurable — it is hardcoded to 7 days. Supported cultures and default culture are also in `appsettings.json`. `EnableHttpsRedirection` (default false) toggles `UseHttpsRedirection()` — see "HTTPS and reverse proxies".
 
-On startup, `DataSeeder` runs migrations and seeds roles and sample data (categories, rooms, cupboards, locations, owners) if the tables are empty.
+On startup, `DataSeeder` runs migrations and seeds roles plus the real workspace structure (rooms Kontor/Akadeemia tee 5 and Ladu/Küberneetika maja; the office cabinet "Kapp" with positions Kapp 1x1–5x4; owner "Lapikud") if the tables are empty. The Ladu's cabinets and categories are not seeded.

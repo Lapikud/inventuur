@@ -3,10 +3,11 @@
 import { useTranslation } from "react-i18next";
 import { cupboardService } from "@/services";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useCupboards } from "@/hooks/queries/entityQueries";
+import { useCupboards, useRooms } from "@/hooks/queries/entityQueries";
 import { useEntityCrud } from "@/hooks/useEntityCrud";
 import { qk } from "@/lib/queryKeys";
 import { ICupboard, ICupboardAdd } from "@/types/domain/DomainTypes";
+import { toOptions } from "@/components/dialogs/common/entityDialogTypes";
 import ListPageWrapper from "@/components/ListPageWrapper";
 import DataTable from "@/components/DataTable";
 import ErrorBanner from "@/components/ErrorBanner";
@@ -28,25 +29,34 @@ import {
 export default function Cupboards() {
 	const { t: tCupboard } = useTranslation("cupboard");
 	const { t: tCommon } = useTranslation("common");
+	const { t: tAssetViewModel } = useTranslation("assetviewmodel");
 
 	const { canManage } = usePermissions();
 
-	const { data = [], error } = useCupboards();
+	const { data: cupboards = [], error } = useCupboards();
+	// Reference list for the dialog's Room select and the list's Room column.
+	const { data: rooms = [] } = useRooms();
+
 	const crud = useEntityCrud<ICupboard, ICupboardAdd>({
 		service: cupboardService,
-		// overviewRoot embeds the joined cupboardName; cupboardsInRooms joins on cupboardId.
-		invalidateKeys: [qk.cupboards(), qk.overviewRoot(), qk.cupboardsInRooms()],
+		// overviewRoot embeds the joined cupboardName.
+		invalidateKeys: [qk.cupboards(), qk.overviewRoot()],
 	});
+
+	const options = { rooms: toOptions(rooms, (r) => r.roomName) };
+	const roomNameById = new Map(rooms.map((room) => [room.id, room.roomName]));
 
 	const columns = [
 		tCupboard("CodeName"),
+		tAssetViewModel("RoomName"),
 		...(canManage ? [tCommon("Actions")] : []),
 	];
 
-	const rows = data.map((item) => ({
+	const rows = cupboards.map((item) => ({
 		id: item.id,
 		cells: [
 			item.codeName,
+			roomNameById.get(item.roomId) ?? "-",
 			...(canManage
 				? [
 						<ActionCell key="actions">
@@ -75,12 +85,14 @@ export default function Cupboards() {
 			<EntityFormDialog
 				mode="create"
 				config={cupboardFormConfig}
+				options={options}
 				{...crud.createDialogProps}
 			/>
 
 			<EntityEditDialog
 				config={cupboardFormConfig}
 				toForm={cupboardToForm}
+				options={options}
 				{...crud.editDialogProps}
 			/>
 

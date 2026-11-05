@@ -34,11 +34,11 @@ export default function Users() {
 		}));
 	}, [users, roles, userRoles]);
 
-	const columns = [tUser("AppUserName"), tRole("AppRoles")];
+	const columns = [tUser("AppUserName"), tUser("FirstName"), tRole("AppRoles")];
 
 	const rows = data.map((item) => ({
 		id: item.id,
-		cells: [item.username, item.roles.join(", ") || "-"],
+		cells: [item.username, item.displayName || "-", item.roles.join(", ") || "-"],
 	}));
 
 	return (

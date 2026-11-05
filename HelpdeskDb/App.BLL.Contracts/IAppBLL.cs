@@ -13,13 +13,10 @@ public interface IAppBLL : IBaseBLL
     
     ICupboardService CupboardService { get; }
     
-    ICupboardInRoomService CupboardInRoomService { get; }
     
     ILocationService LocationService { get; }
     
-    ILocationAssetsService LocationAssetsService { get; }
     
-    ILocationInCupboardService LocationInCupboardService { get; }
     
     IOwnerService OwnerService { get; }
     
@@ -32,4 +29,10 @@ public interface IAppBLL : IBaseBLL
     IAppUserRoleService AppUserRoleService { get; }
     
     IAssetReservationService AssetReservationService { get; }
+
+    ITagService TagService { get; }
+
+    IAssetTagService AssetTagService { get; }
+
+    IAssetPhotoService AssetPhotoService { get; }
 }

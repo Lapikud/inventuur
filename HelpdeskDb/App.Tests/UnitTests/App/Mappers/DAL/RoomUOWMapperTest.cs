@@ -17,12 +17,18 @@ public class RoomUOWMapperTest
     public void Map_DomainToDal_ShouldCopyScalarsAndCollections()
     {
         var id = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
+        var locationId = Guid.NewGuid();
         var src = new Domain.Room
         {
             Id = id, RoomName = "Room", Comment = "comment",
-            CupboardsInRooms = new List<Domain.CupboardInRoom>
+            Cupboards = new List<Domain.Cupboard>
             {
-                new() { Id = Guid.NewGuid(), Comment = "comment", RoomId = id, CupboardId = Guid.NewGuid() }
+                new() { Id = cupboardId, CodeName = "C", RoomId = id }
+            },
+            Locations = new List<Domain.Location>
+            {
+                new() { Id = locationId, LocationName = "L", ShelfNum = 1, Column = 1, RoomId = id, CupboardId = cupboardId }
             }
         };
 
@@ -32,20 +38,36 @@ public class RoomUOWMapperTest
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.RoomName, dst.RoomName);
         Assert.Equal(src.Comment, dst.Comment);
-        Assert.Single(dst.CupboardsInRooms!);
-        Assert.All(dst.CupboardsInRooms!, x => { Assert.Null(x.Cupboard); Assert.Null(x.Room); });
+        Assert.Single(dst.Cupboards!);
+        Assert.Single(dst.Locations!);
+        var mappedCupboard = dst.Cupboards!.First();
+        Assert.Equal(cupboardId, mappedCupboard.Id);
+        Assert.Equal(id, mappedCupboard.RoomId);
+        Assert.Null(mappedCupboard.Room);
+        var mappedLocation = dst.Locations!.First();
+        Assert.Equal(locationId, mappedLocation.Id);
+        Assert.Equal(id, mappedLocation.RoomId);
+        Assert.Equal(cupboardId, mappedLocation.CupboardId);
+        Assert.Null(mappedLocation.Room);
+        Assert.Null(mappedLocation.Cupboard);
     }
 
     [Fact]
     public void Map_DalToDomain_ShouldCopyScalarsAndCollections()
     {
         var id = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
+        var locationId = Guid.NewGuid();
         var src = new DalDto.Room
         {
             Id = id, RoomName = "Room", Comment = "comment",
-            CupboardsInRooms = new List<DalDto.CupboardInRoom>
+            Cupboards = new List<DalDto.Cupboard>
             {
-                new() { Id = Guid.NewGuid(), Comment = "comment", RoomId = id, CupboardId = Guid.NewGuid() }
+                new() { Id = cupboardId, CodeName = "C", RoomId = id }
+            },
+            Locations = new List<DalDto.Location>
+            {
+                new() { Id = locationId, LocationName = "L", ShelfNum = 1, Column = 1, RoomId = id, CupboardId = cupboardId }
             }
         };
 
@@ -55,7 +77,17 @@ public class RoomUOWMapperTest
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.RoomName, dst.RoomName);
         Assert.Equal(src.Comment, dst.Comment);
-        Assert.Single(dst.CupboardsInRooms!);
-        Assert.All(dst.CupboardsInRooms!, x => { Assert.Null(x.Cupboard); Assert.Null(x.Room); });
+        Assert.Single(dst.Cupboards!);
+        Assert.Single(dst.Locations!);
+        var mappedCupboard = dst.Cupboards!.First();
+        Assert.Equal(cupboardId, mappedCupboard.Id);
+        Assert.Equal(id, mappedCupboard.RoomId);
+        Assert.Null(mappedCupboard.Room);
+        var mappedLocation = dst.Locations!.First();
+        Assert.Equal(locationId, mappedLocation.Id);
+        Assert.Equal(id, mappedLocation.RoomId);
+        Assert.Equal(cupboardId, mappedLocation.CupboardId);
+        Assert.Null(mappedLocation.Room);
+        Assert.Null(mappedLocation.Cupboard);
     }
 }

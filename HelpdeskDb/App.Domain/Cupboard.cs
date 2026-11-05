@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Base.Domain;
 using Base.Resources.Errors;
 
@@ -14,6 +14,12 @@ public class Cupboard : BaseEntity
         ErrorMessageResourceType = typeof(ValidationErrors))]
     public string CodeName { get; set; } = default!;
 
-    public ICollection<LocationInCupboard>? LocationsInCupboards { get; set; }
-    public ICollection<CupboardInRoom>? CupboardsInRooms { get; set; }
+    /// <summary>
+    /// The room this cupboard stands in — a direct foreign key, no junction
+    /// table: a cupboard lives in exactly one room.
+    /// </summary>
+    public Guid RoomId { get; set; }
+    public Room? Room { get; set; }
+
+    public ICollection<Location>? Locations { get; set; }
 }

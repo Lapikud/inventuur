@@ -49,4 +49,20 @@ public class Asset: IDomainId
         Prompt = nameof(App.Resources.Domain.Asset.Barcode),
         ResourceType = typeof(App.Resources.Domain.Asset))]
     public string? Barcode { get; set; }
+
+    [MaxLength(16,
+        ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.MaxLengthValidationError),
+        ErrorMessageResourceType = typeof(ValidationErrors))]
+    public string? Slug { get; set; }
+
+    public App.Domain.AssetVisibility Visibility { get; set; } = App.Domain.AssetVisibility.Normal;
+
+    public bool HasPhoto { get; set; }
+
+    public DateTime? LastAuditAt { get; set; }
+
+    [MaxLength(64,
+        ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.MaxLengthValidationError),
+        ErrorMessageResourceType = typeof(ValidationErrors))]
+    public string? LastAuditBy { get; set; }
 }

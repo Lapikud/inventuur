@@ -28,15 +28,23 @@ public class RoomServiceTest : IClassFixture<TestDatabaseFixture>
     }
 
     [Fact]
-    public async Task AllAsync_IncludesCupboardsInRooms()
+    public async Task AllAsync_IncludesCupboardsAndLocations()
     {
         var results = (await _service.AllAsync()).ToList();
 
         Assert.All(results, r =>
         {
-            Assert.NotNull(r.CupboardsInRooms);
-            Assert.Single(r.CupboardsInRooms!);
+            Assert.NotNull(r.Cupboards);
+            Assert.Single(r.Cupboards!);
+            Assert.NotNull(r.Locations);
+            Assert.Single(r.Locations!);
         });
+        var room1 = results.First(r => r.RoomName == "TestRoom1");
+        var room2 = results.First(r => r.RoomName == "TestRoom2");
+        Assert.Equal("TestCupboard1", room1.Cupboards!.First().CodeName);
+        Assert.Equal("TestCupboard2", room2.Cupboards!.First().CodeName);
+        Assert.Equal("TestLocation1", room1.Locations!.First().LocationName);
+        Assert.Equal("TestLocation2", room2.Locations!.First().LocationName);
     }
 
     private (AppDbContext, RoomService) SetupDependencies()

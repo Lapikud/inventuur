@@ -12,13 +12,11 @@ import Spinner from "@/components/LoadingSpinner";
 const ADMIN_ROUTES = [
 	"dbassets",
 	"categoryAssets",
-	"locationAssets",
 	"ownerAssets",
 	"locations",
 	"users",
 	"roles",
 	"refreshTokens",
-	"cupboardsInRooms",
 	"rooms",
 	"cupboards",
 ];
@@ -33,14 +31,20 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 	const segment = pathname.split("/")[1]?.toLowerCase();
 	// Segment equality, not substring: `includes("/login")` would treat /loginX/
 	// or /admin/login/ as public and skip the auth gate entirely.
-	const isPublic = segment === "login";
+	// /a/* is the anonymous public asset page (QR sticker target) — it must
+	// render for logged-out visitors, so it shares the login route's gate.
+	// The root ("/") is audience-aware itself: it renders the public inventory
+	// table when signed out and the full overview when signed in.
+	const isPublic = segment === "login" || segment === "a" || segment === "";
 	const needsAdmin = ADMIN_ROUTES.some((r) => r.toLowerCase() === segment);
 
 	useEffect(() => {
 		if (isPublic) return;
 		if (accountInfo === undefined) return; // still hydrating
 		if (!accountInfo.id) {
-			router.push("/login");
+			// No session: land on the public inventory table instead of the
+			// login form — /login stays reachable via the header button.
+			router.push("/");
 		} else if (needsAdmin && !canManage) {
 			router.push("/");
 		}

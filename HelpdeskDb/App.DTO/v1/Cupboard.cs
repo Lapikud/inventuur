@@ -20,4 +20,7 @@ public class Cupboard: IDomainId
     [Required(ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.Required),
         ErrorMessageResourceType = typeof(Base.Resources.Errors.ValidationErrors))]
     public string CodeName { get; set; } = default!;
+
+    /// <summary>Room this cupboard stands in.</summary>
+    public Guid RoomId { get; set; }
 }

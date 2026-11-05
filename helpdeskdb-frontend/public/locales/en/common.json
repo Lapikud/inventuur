@@ -41,5 +41,14 @@
   "Processing": "Processing...",
   "LoadFailed": "Failed to load data. Please try again.",
   "LogoutFailed": "Logout failed — you are still signed in. Please try again.",
-  "NoRows": "No data to display."
+  "NoRows": "No data to display.",
+  "Apply": "Apply",
+  "Reset": "Reset",
+  "Visibility": "Visibility",
+  "Tags": "Tags",
+  "Normal": "Normal",
+  "Featured": "Featured",
+  "Protected": "Protected",
+  "Archived": "Archived",
+  "Close": "Close"
 }

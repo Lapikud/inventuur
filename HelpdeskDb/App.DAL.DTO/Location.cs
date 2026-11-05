@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Base.Contracts;
-using Base.Resources.Errors;
 
 namespace App.DAL.DTO;
 
@@ -14,6 +12,11 @@ public class Location : IDomainId
 
     public int Column { get; set; }
 
-    public ICollection<LocationInCupboard>? LocationsInCupboards { get; set; }
-    public ICollection<LocationAssets>? LocationsAssetsCollection { get; set; }
+    public Guid RoomId { get; set; }
+
+    public Room? Room { get; set; }
+
+    public Guid? CupboardId { get; set; }
+
+    public Cupboard? Cupboard { get; set; }
 }

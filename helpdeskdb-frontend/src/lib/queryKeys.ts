@@ -28,12 +28,7 @@ export const qk = {
 	categoryAssetByAsset: (assetId: string) =>
 		["categoryAssets", "byAsset", assetId] as const,
 	cupboards: () => ["cupboards"] as const,
-	cupboardsInRooms: () => ["cupboardsInRooms"] as const,
-	locationAssets: () => ["locationAssets"] as const,
-	locationAssetByAsset: (assetId: string) =>
-		["locationAssets", "byAsset", assetId] as const,
 	locations: () => ["locations"] as const,
-	locationsInCupboards: () => ["locationsInCupboards"] as const,
 	// Prefix key for invalidation: matches every searchTerm variant at once, so
 	// a mutation doesn't have to know which search the user is currently on.
 	overviewRoot: () => ["overview"] as const,
@@ -46,6 +41,7 @@ export const qk = {
 	removedAssets: () => ["removedAssets"] as const,
 	roles: () => ["roles"] as const,
 	rooms: () => ["rooms"] as const,
+	tags: () => ["tags"] as const,
 	userRoles: () => ["userRoles"] as const,
 	users: () => ["users"] as const,
 } as const;
@@ -53,17 +49,18 @@ export const qk = {
 /**
  * Every cache a write to an *asset* invalidates.
  *
- * An asset write also touches its category/location/owner mapping rows and can move
- * the asset in or out of the removed list, so all of those go stale together. Shared
- * by the overview page and /dbassets, which previously disagreed: /dbassets invalidated
- * only the asset and overview lists, leaving the three mapping pages caching rows that
- * pointed at a deleted assetId — and those pages fall back to rendering the raw GUID.
+ * An asset write also touches its category/owner mapping rows and can move the
+ * asset in or out of the removed list, so all of those go stale together.
+ * (Placement is a direct location FK on the asset — the locationAssets
+ * junction is gone.) Shared by the overview page and /dbassets, which
+ * previously disagreed: /dbassets invalidated only the asset and overview
+ * lists, leaving the mapping pages caching rows that pointed at a deleted
+ * assetId — and those pages fall back to rendering the raw GUID.
  */
 export const assetWriteKeys = () => [
 	qk.overviewRoot(),
 	qk.assetsRoot(),
 	qk.removedAssets(),
 	qk.categoryAssets(),
-	qk.locationAssets(),
 	qk.ownerAssets(),
 ];

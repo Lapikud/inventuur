@@ -10,6 +10,7 @@ import { accountService } from "@/services";
 import Providers from "./providers";
 import ServiceAuthBinder from "@/components/ServiceAuthBinder";
 import QueryCacheReset from "@/components/QueryCacheReset";
+import { usePathname } from "next/navigation";
 import "../../i18n";
 
 export default function RootLayout({
@@ -19,6 +20,13 @@ export default function RootLayout({
 }>) {
 	const [accountInfo, setAccountInfo] = useState<IAccountInfo | undefined>();
 	const [hydrated, setHydrated] = useState(false);
+	const pathname = usePathname();
+
+	// The /a/* public asset page is standalone like a QR landing page: no
+	// navigation, no auth. Same first-segment match as AuthGuard's public gate
+	// (trailingSlash is on, so don't startsWith the raw pathname).
+	const isStandaloneRoute =
+		pathname.split("/")[1]?.toLowerCase() === "a";
 
 	useEffect(() => {
 		(async () => {
@@ -26,7 +34,7 @@ export default function RootLayout({
 			if (result.data) {
 				setAccountInfo({
 					id: result.data.id,
-					name: result.data.username,
+					name: result.data.displayName || result.data.username,
 					roles: result.data.roles,
 				});
 			} else {
@@ -54,13 +62,13 @@ export default function RootLayout({
 							{/* Inside both Providers and AccountContext: it needs
 						    the query client and the identity to compare. */}
 						<QueryCacheReset />
-						<Header />
+						{!isStandaloneRoute && <Header />}
 							<div className="px-3 sm:px-4">
 								<main role="main" className="w-full text-center">
 									<AuthGuard>{children}</AuthGuard>
 								</main>
 							</div>
-							<Footer />
+							{!isStandaloneRoute && <Footer />}
 						</AccountContext.Provider>
 					)}
 				</Providers>

@@ -17,8 +17,8 @@ public class CupboardRepository : BaseRepository<App.DAL.DTO.Cupboard, App.Domai
     {
         var query = GetQuery();
         query = query
-            .Include(x => x.LocationsInCupboards)
-            .Include(x => x.CupboardsInRooms)
+            .Include(x => x.Locations)
+            .Include(x => x.Room)
             .OrderBy(c => c.CodeName);
         return (await query.ToListAsync()).Select(e => Mapper.Map(e)!);
     }

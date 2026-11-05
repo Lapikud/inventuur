@@ -1,4 +1,4 @@
-﻿using App.DAL.DTO;
+using App.DAL.DTO;
 using Base.Contracts;
 
 namespace App.DAL.EF.Mappers;
@@ -12,25 +12,17 @@ public class CupboardUOWMapper : IMapper<App.DAL.DTO.Cupboard, App.Domain.Cupboa
         {
             Id = entity.Id,
             CodeName = entity.CodeName,
-            CupboardsInRooms = entity.CupboardsInRooms?.Select(cir => new CupboardInRoom()
+            RoomId = entity.RoomId,
+            Room = null,
+            Locations = entity.Locations?.Select(l => new Location()
             {
-                Id = cir.Id,
-                Comment = cir.Comment,
-                
-                CupboardId = cir.CupboardId,
-                Cupboard = null, // la.Asset,
-                
-                RoomId = cir.RoomId,
+                Id = l.Id,
+                LocationName = l.LocationName,
+                ShelfNum = l.ShelfNum,
+                Column = l.Column,
+                RoomId = l.RoomId,
                 Room = null,
-                
-            }).ToList(),
-            LocationsInCupboards = entity.LocationsInCupboards?.Select(lic => new LocationInCupboard()
-            {
-                Id = lic.Id,
-                LocationId = lic.LocationId,
-                Location = null,
-                
-                CupboardId = lic.CupboardId,
+                CupboardId = l.CupboardId,
                 Cupboard = null,
             }).ToList(),
         };
@@ -44,25 +36,17 @@ public class CupboardUOWMapper : IMapper<App.DAL.DTO.Cupboard, App.Domain.Cupboa
         {
             Id = entity.Id,
             CodeName = entity.CodeName,
-            CupboardsInRooms = entity.CupboardsInRooms?.Select(cir => new Domain.CupboardInRoom()
+            RoomId = entity.RoomId,
+            Room = null,
+            Locations = entity.Locations?.Select(l => new Domain.Location()
             {
-                Id = cir.Id,
-                Comment = cir.Comment,
-                
-                CupboardId = cir.CupboardId,
-                Cupboard = null, // la.Asset,
-                
-                RoomId = cir.RoomId,
+                Id = l.Id,
+                LocationName = l.LocationName,
+                ShelfNum = l.ShelfNum,
+                Column = l.Column,
+                RoomId = l.RoomId,
                 Room = null,
-                
-            }).ToList(),
-            LocationsInCupboards = entity.LocationsInCupboards?.Select(lic => new Domain.LocationInCupboard()
-            {
-                Id = lic.Id,
-                LocationId = lic.LocationId,
-                Location = null,
-                
-                CupboardId = lic.CupboardId,
+                CupboardId = l.CupboardId,
                 Cupboard = null,
             }).ToList(),
         };

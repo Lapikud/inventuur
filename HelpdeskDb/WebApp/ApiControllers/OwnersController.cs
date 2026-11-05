@@ -24,18 +24,34 @@ namespace WebApp.ApiControllers
     public class OwnersController : ControllerBase
     {
         private readonly IAppBLL _bll;
-        
+        private readonly AppDbContext _context;
+
         private readonly App.DTO.v1.Mappers.OwnerMapper _mapper =
             new App.DTO.v1.Mappers.OwnerMapper();
 
-        
+
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="bll">Business Logic.</param>
-        public OwnersController(IAppBLL bll)
+        /// <param name="context">Database context, to resolve user first names.</param>
+        public OwnersController(IAppBLL bll, AppDbContext context)
         {
             _bll = bll;
+            _context = context;
+        }
+
+        /// <summary>
+        /// Resolve user first names for owner rows, so the API and selects can
+        /// show "Firstname (username)" instead of a bare login.
+        /// </summary>
+        private async Task<Dictionary<string, string>> BuildDisplayNameMapAsync()
+        {
+            var users = await _context.Users.ToListAsync();
+            return users
+                .Where(u => u.DisplayName != null)
+                .GroupBy(u => u.Username)
+                .ToDictionary(g => g.Key, g => g.First().DisplayName!);
         }
 
         /// <summary>
@@ -50,7 +66,16 @@ namespace WebApp.ApiControllers
         public async Task<ActionResult<IEnumerable<App.DTO.v1.Owner>>> GetOwners()
         {
             var data = await _bll.OwnerService.AllAsync();
-            var res = data.Select(o => _mapper.Map(o)!).OrderBy(o => o.OwnerName).ToList();
+            var namesByUsername = await BuildDisplayNameMapAsync();
+            var res = data
+                .Select(o =>
+                {
+                    var dto = _mapper.Map(o)!;
+                    dto.DisplayName = namesByUsername.GetValueOrDefault(o.OwnerName);
+                    return dto;
+                })
+                .OrderBy(o => o.DisplayName ?? o.OwnerName)
+                .ToList();
             return Ok(res);
         }
 
@@ -72,7 +97,9 @@ namespace WebApp.ApiControllers
                 return NotFound();
             }
 
-            return Ok(_mapper.Map(owner)!);
+            var dto = _mapper.Map(owner)!;
+            dto.DisplayName = (await BuildDisplayNameMapAsync()).GetValueOrDefault(owner.OwnerName);
+            return Ok(dto);
         }
 
         /// <summary>

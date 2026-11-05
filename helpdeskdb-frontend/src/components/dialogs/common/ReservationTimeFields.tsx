@@ -12,9 +12,10 @@ interface ReservationTimeFieldsProps {
 	onFromChange: (date: Date | null) => void;
 	onToChange: (date: Date | null) => void;
 	/**
-	 * Calendar bounds for both pickers. Omit for a new booking (the picker's own
-	 * yesterday→+30d window applies); the edit dialogs pass `reservationBounds(from, to)`
-	 * so dates already on the record stay selectable.
+	 * Bounds for both pickers. Omit for a new booking (the picker's own
+	 * yesterday→+30d window applies); the edit dialogs pass
+	 * `reservationBounds(from, to)` so dates already on the record stay
+	 * selectable.
 	 */
 	minDate?: Date;
 	maxDate?: Date;
@@ -33,8 +34,11 @@ export const ReservationTimeFields = ({
 }: ReservationTimeFieldsProps) => (
 	<>
 		<div className="mb-4">
-			<label className="block text-gray-700 mb-2">{fromLabel}</label>
+			<label htmlFor="reservation-from" className="block text-gray-700 mb-2">
+				{fromLabel}
+			</label>
 			<DateTimePicker
+				id="reservation-from"
 				value={from}
 				onChange={onFromChange}
 				minDate={minDate}
@@ -42,8 +46,11 @@ export const ReservationTimeFields = ({
 			/>
 		</div>
 		<div className="mb-4">
-			<label className="block text-gray-700 mb-2">{toLabel}</label>
+			<label htmlFor="reservation-to" className="block text-gray-700 mb-2">
+				{toLabel}
+			</label>
 			<DateTimePicker
+				id="reservation-to"
 				value={to}
 				onChange={onToChange}
 				minDate={minDate}

@@ -15,15 +15,21 @@ public class RoomBLLMapperTest
     public void Map_DalToBll_NullReturnsNull() => Assert.Null(_mapper.Map((DalDto.Room?)null));
 
     [Fact]
-    public void Map_BllToDal_ShouldCopyScalarsAndCollection()
+    public void Map_BllToDal_ShouldCopyScalarsAndCollections()
     {
         var id = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
+        var locationId = Guid.NewGuid();
         var src = new BllDto.Room
         {
             Id = id, RoomName = "R", Comment = "c",
-            CupboardsInRooms = new List<BllDto.CupboardInRoom>
+            Cupboards = new List<BllDto.Cupboard>
             {
-                new() { Id = Guid.NewGuid(), CupboardId = Guid.NewGuid(), RoomId = id, Comment = "x" }
+                new() { Id = cupboardId, CodeName = "C", RoomId = id }
+            },
+            Locations = new List<BllDto.Location>
+            {
+                new() { Id = locationId, LocationName = "L", ShelfNum = 1, Column = 1, RoomId = id, CupboardId = cupboardId }
             }
         };
 
@@ -33,8 +39,17 @@ public class RoomBLLMapperTest
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.RoomName, dst.RoomName);
         Assert.Equal(src.Comment, dst.Comment);
-        Assert.Single(dst.CupboardsInRooms!);
-        Assert.All(dst.CupboardsInRooms!, cir => { Assert.Null(cir.Cupboard); Assert.Null(cir.Room); });
+        Assert.Single(dst.Cupboards!);
+        Assert.Single(dst.Locations!);
+        var mappedCupboard = dst.Cupboards!.First();
+        Assert.Equal(cupboardId, mappedCupboard.Id);
+        Assert.Equal(id, mappedCupboard.RoomId);
+        Assert.Null(mappedCupboard.Room);
+        var mappedLocation = dst.Locations!.First();
+        Assert.Equal(locationId, mappedLocation.Id);
+        Assert.Equal(id, mappedLocation.RoomId);
+        Assert.Null(mappedLocation.Room);
+        Assert.Null(mappedLocation.Cupboard);
     }
 
     [Fact]

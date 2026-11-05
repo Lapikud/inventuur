@@ -32,8 +32,8 @@ public class AssetServiceTest : IClassFixture<TestDatabaseFixture>
         Assert.Equal(assetVm.Id, asset.Id);
         Assert.Equal(assetVm.AssetName, asset.AssetName);
         Assert.InRange(assetVm.AddedAt,
-            asset.LocationsAssetsCollection!.First().CreatedAt - TimeSpan.FromSeconds(10),
-            asset.LocationsAssetsCollection!.First().CreatedAt + TimeSpan.FromSeconds(10)
+            asset.Location!.CreatedAt - TimeSpan.FromSeconds(10),
+            asset.Location!.CreatedAt + TimeSpan.FromSeconds(10)
         );
         Assert.Equal(
             assetVm.CategoryName,
@@ -46,24 +46,19 @@ public class AssetServiceTest : IClassFixture<TestDatabaseFixture>
         );
         Assert.Equal(
             assetVm.CupboardName,
-            asset.LocationsAssetsCollection!.First()
-                .Location!.LocationsInCupboards!.First()
-                .Cupboard!.CodeName
+            asset.Location!.Cupboard!.CodeName
         );
         Assert.Equal(
             assetVm.RoomName,
-            asset.LocationsAssetsCollection!.First()
-                .Location!.LocationsInCupboards!.First()
-                .Cupboard!.CupboardsInRooms!.First()
-                .Room!.RoomName
+            asset.Location!.Room!.RoomName
         );
         Assert.Equal(
             assetVm.ShelfNum,
-            asset.LocationsAssetsCollection!.First().Location!.ShelfNum
+            asset.Location!.ShelfNum
         );
         Assert.Equal(
             assetVm.Column,
-            asset.LocationsAssetsCollection!.First().Location!.Column
+            asset.Location!.Column
         );
     }
 
@@ -222,10 +217,8 @@ public class AssetServiceTest : IClassFixture<TestDatabaseFixture>
 
         var category = _context.Categories.First();
         var location = _context.Locations
-            .Include(l => l.LocationsInCupboards)! // Load LocationInCupboard
-            .ThenInclude(lc => lc.Cupboard) // Load Cupboard
-            .ThenInclude(c => c!.CupboardsInRooms)! // Load CupboardInRoom
-            .ThenInclude(cr => cr.Room) // Load Room
+            .Include(l => l.Room) // Load Room
+            .Include(l => l.Cupboard) // Load Cupboard
             .First(l => l.LocationName == "TestLocation2");
         var owner = _context.Owners.First();
 
@@ -235,30 +228,23 @@ public class AssetServiceTest : IClassFixture<TestDatabaseFixture>
             CategoryId = category.Id,
             Category = category,
         };
-        var locationAsset = new Domain.LocationAssets()
-        {
-            AssetId = asset.Id,
-            LocationId = location.Id,
-            Location = location,
-        };
         var ownerAsset = new Domain.OwnerAssets()
         {
             AssetId = asset.Id,
             OwnerId = owner.Id,
             Owner = owner,
         };
+        asset.LocationId = location.Id;
 
         _context.Assets.Add(asset);
         _context.CategoryAssetsCollection.Add(categoryAsset);
-        _context.LocationAssetsCollection.Add(locationAsset);
         _context.OwnerAssets.Add(ownerAsset);
         _context.SaveChanges();
 
         asset.CategoryAssetsCollection = new List<Domain.CategoryAssets>();
         asset.CategoryAssetsCollection.Add(categoryAsset);
 
-        asset.LocationsAssetsCollection = new List<Domain.LocationAssets>();
-        asset.LocationsAssetsCollection.Add(locationAsset);
+        asset.Location = location;
 
         asset.OwnerAssets = new List<Domain.OwnerAssets>();
         asset.OwnerAssets.Add(ownerAsset);

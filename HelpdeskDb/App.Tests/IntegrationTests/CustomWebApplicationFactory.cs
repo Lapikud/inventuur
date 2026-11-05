@@ -171,33 +171,18 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
         var cupboard1 = new Cupboard
         {
             Id = Guid.Parse("00000000-0000-0000-0000-000000000200"),
-            CodeName = "Cupboard 1"
+            CodeName = "Cupboard 1",
+            RoomId = room1.Id
         };
 
         var cupboard2 = new Cupboard
         {
             Id = Guid.Parse("00000000-0000-0000-0000-000000000201"),
-            CodeName = "Cupboard 2"
+            CodeName = "Cupboard 2",
+            RoomId = room2.Id
         };
 
         await context.Cupboards.AddRangeAsync(cupboard1, cupboard2);
-
-        await context.CupboardsInRooms.AddRangeAsync(
-            new CupboardInRoom()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000300"),
-                CupboardId = cupboard1.Id,
-                RoomId = room1.Id,
-                Comment = "Cupboard in room 1"
-            },
-            new CupboardInRoom()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000301"),
-                CupboardId = cupboard2.Id,
-                RoomId = room2.Id,
-                Comment = "Cupboard in room 2"
-            }
-        );
 
         var location1 = new Location()
         {
@@ -205,6 +190,8 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             LocationName = "Location 1",
             ShelfNum = 1,
             Column = 1,
+            RoomId = room1.Id,
+            CupboardId = cupboard1.Id,
         };
 
         var location2 = new Location()
@@ -213,24 +200,11 @@ public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStar
             LocationName = "Location 2",
             ShelfNum = 2,
             Column = 2,
+            RoomId = room2.Id,
+            CupboardId = cupboard2.Id,
         };
 
         await context.Locations.AddRangeAsync(location1, location2);
-
-        await context.LocationsInCupboards.AddRangeAsync(
-            new LocationInCupboard()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000500"),
-                LocationId = location1.Id,
-                CupboardId = cupboard1.Id,
-            },
-            new LocationInCupboard()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000501"),
-                LocationId = location2.Id,
-                CupboardId = cupboard2.Id,
-            }
-        );
 
         await context.SaveChangesAsync();
     }

@@ -42,9 +42,28 @@ public class Asset: IDomainId
         ResourceType = typeof(App.Resources.Domain.Asset))]
     public string? Barcode { get; set; }
 
-    public ICollection<LocationAssets>? LocationsAssetsCollection { get; set; }
+    [MaxLength(16,
+        ErrorMessageResourceName = nameof(ValidationErrors.MaxLengthValidationError),
+        ErrorMessageResourceType = typeof(ValidationErrors))]
+    public string? Slug { get; set; }
+
+    public App.Domain.AssetVisibility Visibility { get; set; } = App.Domain.AssetVisibility.Normal;
+
+    public bool HasPhoto { get; set; }
+
+    public DateTime? LastAuditAt { get; set; }
+
+    [MaxLength(64)]
+    public string? LastAuditBy { get; set; }
+
+    public Guid? LocationId { get; set; }
+    public Location? Location { get; set; }
+
+
     public ICollection<OwnerAssets>? OwnerAssets { get; set; }
     public ICollection<CategoryAssets>? CategoryAssetsCollection { get; set; }
     public ICollection<RemovedAssets>? RemovedAssetsCollection { get; set; }
     public ICollection<AssetReservation>? AssetReservations { get; set; }
+    public ICollection<AssetTag>? AssetTags { get; set; }
+    public AssetPhoto? AssetPhoto { get; set; }
 }

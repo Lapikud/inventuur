@@ -180,3 +180,25 @@ body {
 		--chart-5: 340 75% 55%;
 	}
 }
+
+/*
+ * Sticker printing: the page hides everything except the sticker card, which
+ * is lifted to the top-left corner of the sheet.
+ */
+@media print {
+	body * {
+		visibility: hidden;
+	}
+
+	#sticker-card,
+	#sticker-card * {
+		visibility: visible;
+	}
+
+	#sticker-card {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+	}
+}

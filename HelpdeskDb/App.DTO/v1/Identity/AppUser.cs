@@ -16,4 +16,7 @@ public class AppUser
     [Required(ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.Required),
         ErrorMessageResourceType = typeof(Base.Resources.Errors.ValidationErrors))]
     public string Username { get; set; } = default!;
+
+    /// <summary>First name from IPA; null when IPA has none (then show Username).</summary>
+    public string? DisplayName { get; set; }
 }

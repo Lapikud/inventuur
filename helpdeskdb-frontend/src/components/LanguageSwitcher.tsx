@@ -42,7 +42,7 @@ const LanguageSwitcher = () => {
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="inline-flex justify-center items-center w-24 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="inline-flex justify-center items-center w-24 px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-card hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-haspopup="true"
         aria-expanded={open}
       >
@@ -60,7 +60,7 @@ const LanguageSwitcher = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-300 rounded-md shadow-lg z-10">
+        <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-300 rounded-md shadow-raised z-10">
           {languages.map(({ code, label }) => (
             <button
               key={code}

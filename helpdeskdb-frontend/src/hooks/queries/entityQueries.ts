@@ -9,9 +9,6 @@ import {
 	categoryAssetsService,
 	categoryService,
 	cupboardService,
-	cupboardsInRoomsService,
-	locationAssetsService,
-	locationInCupboardService,
 	locationService,
 	ownerAssetsService,
 	ownerService,
@@ -19,6 +16,7 @@ import {
 	removedAssetsService,
 	roleService,
 	roomService,
+	tagService,
 	userRoleService,
 	userService,
 } from "@/services";
@@ -95,6 +93,12 @@ export const useUsers = makeListQuery({
 	staleTime: REFERENCE_DATA_STALE_TIME,
 });
 
+export const useTags = makeListQuery({
+	queryKey: qk.tags(),
+	queryFn: () => unwrap(tagService.getAllAsync()),
+	staleTime: REFERENCE_DATA_STALE_TIME,
+});
+
 // ------------------------------------------------------------ transactional
 
 /**
@@ -127,24 +131,9 @@ export const useCategoryAssets = makeListQuery({
 	queryFn: () => unwrap(categoryAssetsService.getAllAsync()),
 });
 
-export const useLocationAssets = makeListQuery({
-	queryKey: qk.locationAssets(),
-	queryFn: () => unwrap(locationAssetsService.getAllAsync()),
-});
-
 export const useOwnerAssets = makeListQuery({
 	queryKey: qk.ownerAssets(),
 	queryFn: () => unwrap(ownerAssetsService.getAllAsync()),
-});
-
-export const useCupboardsInRooms = makeListQuery({
-	queryKey: qk.cupboardsInRooms(),
-	queryFn: () => unwrap(cupboardsInRoomsService.getAllAsync()),
-});
-
-export const useLocationsInCupboards = makeListQuery({
-	queryKey: qk.locationsInCupboards(),
-	queryFn: () => unwrap(locationInCupboardService.getAllAsync()),
 });
 
 export const useUserRoles = makeListQuery({
@@ -182,7 +171,7 @@ export const useAssetReservation = (id: string | null) =>
 	});
 
 /**
- * The three `…ByAssetId` service methods unwrap internally: they resolve to
+ * The two `…ByAssetId` service methods unwrap internally: they resolve to
  * `null` only when the asset genuinely has no mapping yet, and reject with
  * `ApiError` on a failed fetch — so a failure marks the query errored instead
  * of masquerading as "no mapping".
@@ -192,14 +181,6 @@ export const useCategoryAssetByAsset = (assetId: string | null) =>
 		queryKey: qk.categoryAssetByAsset(assetId ?? ""),
 		queryFn: () =>
 			categoryAssetsService.getCategoryAssetByAssetId(assetId!),
-		enabled: !!assetId,
-	});
-
-export const useLocationAssetByAsset = (assetId: string | null) =>
-	useQuery({
-		queryKey: qk.locationAssetByAsset(assetId ?? ""),
-		queryFn: () =>
-			locationAssetsService.getLocationAssetByAssetId(assetId!),
 		enabled: !!assetId,
 	});
 

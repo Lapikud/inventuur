@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebApp.ViewModels;
 using AssetsOverviewViewModel = App.DTO.v1.ViewModels.AssetsOverviewViewModel;
 
 namespace WebApp.ApiControllers
@@ -93,13 +92,11 @@ namespace WebApp.ApiControllers
         public async Task<ActionResult<AssetViewModel>> CreateNewAsset(
             App.DTO.v1.CreateObjects.AssetViewModelCreate assetVm)
         {
-            var bllEntityAsset = await _bll.AssetService.CreateNewAsset(assetVm.AssetName, assetVm.Comment, assetVm.SerialNumber, assetVm.Barcode);
+            var bllEntityAsset = await _bll.AssetService.CreateNewAsset(assetVm.AssetName, assetVm.Comment, assetVm.SerialNumber, assetVm.Barcode, assetVm.SelectedLocationId);
 
             await _bll.CategoryAssetsService.CreateNewCategoryAsset(bllEntityAsset.Id, assetVm.SelectedCategoryId);
 
             await _bll.OwnerAssetsService.CreateNewOwnerAsset(bllEntityAsset.Id, assetVm.SelectedOwnerId);
-
-            await _bll.LocationAssetsService.CreateNewLocationAsset(bllEntityAsset.Id, assetVm.SelectedLocationId);
 
             await _bll.SaveChangesAsync();
 
@@ -141,14 +138,14 @@ namespace WebApp.ApiControllers
                 asset.Comment = assetVm.Comment;
                 asset.SerialNumber = assetVm.SerialNumber;
                 asset.Barcode = assetVm.Barcode;
+                // Direct placement: one foreign key, no junction row to manage.
+                asset.LocationId = assetVm.SelectedLocationId;
 
                 await _bll.AssetService.UpdateAsync(asset);
                 await _bll.CategoryAssetsService.UpdateCategoryOfAsset(assetVm.CategoryAssetsId,
                     assetVm.SelectedCategoryId, assetVm.AssetId);
                 await _bll.OwnerAssetsService.UpdateOwnerOfAsset(assetVm.OwnerAssetsId, assetVm.SelectedOwnerId,
                     assetVm.AssetId);
-                await _bll.LocationAssetsService.UpdateLocationOfAsset(assetVm.LocationAssetsId,
-                    assetVm.SelectedLocationId, assetVm.AssetId);
 
                 await _bll.SaveChangesAsync();
             }
@@ -156,8 +153,7 @@ namespace WebApp.ApiControllers
             {
                 if (!await _bll.AssetService.ExistsAsync(id) ||
                     await _bll.CategoryAssetsService.ExistsAsync(assetVm.SelectedCategoryId) ||
-                    await _bll.OwnerAssetsService.ExistsAsync(assetVm.SelectedOwnerId) ||
-                    await _bll.LocationAssetsService.ExistsAsync(assetVm.SelectedLocationId))
+                    await _bll.OwnerAssetsService.ExistsAsync(assetVm.SelectedOwnerId))
                 {
                     return NotFound();
                 }

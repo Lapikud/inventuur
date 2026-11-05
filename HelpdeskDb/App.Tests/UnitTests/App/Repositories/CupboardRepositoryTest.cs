@@ -27,17 +27,24 @@ public class CupboardRepositoryTest : IClassFixture<TestDatabaseFixture>
     }
 
     [Fact]
-    public async Task AllAsync_IncludesLocationsInCupboardsAndCupboardsInRooms()
+    public async Task AllAsync_IncludesLocationsAndRoomId()
     {
         var results = (await _repository.AllAsync()).ToList();
 
         Assert.All(results, c =>
         {
-            Assert.NotNull(c.LocationsInCupboards);
-            Assert.Single(c.LocationsInCupboards!);
-            Assert.NotNull(c.CupboardsInRooms);
-            Assert.Single(c.CupboardsInRooms!);
+            Assert.NotNull(c.Locations);
+            Assert.Single(c.Locations!);
+            Assert.NotEqual(Guid.Empty, c.RoomId);
         });
+        Assert.Equal(
+            Guid.Parse("00000000-0000-0000-0000-000000000100"),
+            results.First(c => c.CodeName == "TestCupboard1").RoomId
+        );
+        Assert.Equal(
+            Guid.Parse("00000000-0000-0000-0000-000000000101"),
+            results.First(c => c.CodeName == "TestCupboard2").RoomId
+        );
     }
 
     private (AppDbContext, CupboardRepository) SetupDependencies()

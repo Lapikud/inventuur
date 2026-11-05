@@ -45,5 +45,14 @@
   "Processing": "Töötlemine...",
   "LoadFailed": "Andmete laadimine ebaõnnestus. Palun proovi uuesti.",
   "LogoutFailed": "Väljalogimine ebaõnnestus — oled endiselt sisse logitud. Palun proovi uuesti.",
-  "NoRows": "Andmeid pole kuvamiseks."
+  "NoRows": "Andmeid pole kuvamiseks.",
+  "Apply": "Rakenda",
+  "Reset": "Lähtesta",
+  "Visibility": "Nähtavus",
+  "Tags": "Sildid",
+  "Normal": "Tavaline",
+  "Featured": "Esiletõstetud",
+  "Protected": "Kaitstud",
+  "Archived": "Arhiveeritud",
+  "Close": "Sulge"
 }

@@ -17,29 +17,35 @@ public class CupboardMapperTest
     [Fact]
     public void Map_BllToV1_ShouldCopyScalars()
     {
-        var src = new Bll.Cupboard { Id = Guid.NewGuid(), CodeName = "CC" };
+        var roomId = Guid.NewGuid();
+        var src = new Bll.Cupboard { Id = Guid.NewGuid(), CodeName = "CC", RoomId = roomId };
         var dst = _mapper.Map(src);
         Assert.NotNull(dst);
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.CodeName, dst.CodeName);
+        Assert.Equal(src.RoomId, dst.RoomId);
     }
 
     [Fact]
     public void Map_V1ToBll_ShouldCopyScalars()
     {
-        var src = new V1.Cupboard { Id = Guid.NewGuid(), CodeName = "CC" };
+        var roomId = Guid.NewGuid();
+        var src = new V1.Cupboard { Id = Guid.NewGuid(), CodeName = "CC", RoomId = roomId };
         var dst = _mapper.Map(src);
         Assert.NotNull(dst);
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.CodeName, dst.CodeName);
+        Assert.Equal(src.RoomId, dst.RoomId);
     }
 
     [Fact]
     public void Map_Create_ShouldGenerateId()
     {
-        var create = new V1.CreateObjects.CupboardCreate { CodeName = "X" };
+        var roomId = Guid.NewGuid();
+        var create = new V1.CreateObjects.CupboardCreate { CodeName = "X", RoomId = roomId };
         var dst = _mapper.Map(create);
         Assert.NotEqual(Guid.Empty, dst.Id);
         Assert.Equal(create.CodeName, dst.CodeName);
+        Assert.Equal(create.RoomId, dst.RoomId);
     }
 }

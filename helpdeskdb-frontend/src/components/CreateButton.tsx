@@ -1,20 +1,17 @@
 import { useTranslation } from "react-i18next";
-
-const variantClasses = {
-	solid: "bg-[#ff9800] hover:bg-[#f0941d] text-white",
-	outline: "border border-[#ff9800] text-[#f0941d] hover:bg-orange-50",
-} as const;
+import { Button } from "./ui/button";
 
 interface CreateButtonProps {
 	onClick: () => void;
 	/** Defaults to the common CreateNewLink label. */
 	label?: string;
-	variant?: keyof typeof variantClasses;
+	/** "outline" is the secondary style for pages with two create actions. */
+	variant?: "solid" | "outline";
 }
 
 /**
- * The orange pill button passed into ListPageWrapper's `createButton` slot.
- * "outline" is the secondary style for pages with two create actions.
+ * The create CTA passed into ListPageWrapper's `createButton` slot — a ui
+ * Button so it shares the app-wide focus ring and disabled handling.
  */
 export default function CreateButton({
 	onClick,
@@ -24,12 +21,14 @@ export default function CreateButton({
 	const { t: tCommon } = useTranslation("common");
 
 	return (
-		<button
+		<Button
 			type="button"
+			size="lg"
 			onClick={onClick}
-			className={`${variantClasses[variant]} font-medium px-6 py-3 rounded-full text-sm whitespace-nowrap transition-colors duration-150`}
+			variant={variant === "solid" ? "default" : "outline"}
+			className={variant === "outline" ? "border-brand text-brand-hover hover:bg-orange-50" : ""}
 		>
 			{label ?? tCommon("CreateNewLink")}
-		</button>
+		</Button>
 	);
 }

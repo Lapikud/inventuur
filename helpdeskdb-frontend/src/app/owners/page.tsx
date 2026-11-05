@@ -28,6 +28,7 @@ import {
 export default function Owners() {
 	const { t: tOwner } = useTranslation("owner");
 	const { t: tCommon } = useTranslation("common");
+	const { t: tUser } = useTranslation("appuser");
 
 	const { canManage } = usePermissions();
 
@@ -40,6 +41,7 @@ export default function Owners() {
 
 	const columns = [
 		tOwner("OwnerName"),
+		tUser("FirstName"),
 		tCommon("Comment"),
 		...(canManage ? [tCommon("Actions")] : []),
 	];
@@ -48,6 +50,7 @@ export default function Owners() {
 		id: item.id,
 		cells: [
 			item.ownerName,
+			item.displayName || "-",
 			item.comment || "-",
 			...(canManage
 				? [

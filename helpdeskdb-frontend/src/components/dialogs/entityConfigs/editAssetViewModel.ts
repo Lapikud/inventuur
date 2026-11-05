@@ -2,7 +2,6 @@ import {
 	ICategory,
 	ICategoryAsset,
 	ILocation,
-	ILocationAsset,
 	IOwner,
 	IOwnerAsset,
 } from "@/types/domain/DomainTypes";
@@ -98,7 +97,6 @@ export const editAssetToForm = (
 	comment: string,
 	categoryAssets: ICategoryAsset | null,
 	ownerAssets: IOwnerAsset | null,
-	locationAssets: ILocationAsset | null,
 ): EditAssetForm => ({
 	assetName: asset.assetName,
 	comment,
@@ -106,7 +104,8 @@ export const editAssetToForm = (
 	barcode: asset.barcode ?? "",
 	categoryId: categoryAssets?.categoryId ?? "",
 	ownerId: ownerAssets?.ownerId ?? "",
-	locationId: locationAssets?.locationId ?? "",
+	// Direct placement FK from the overview payload; null opens unselected.
+	locationId: asset.locationId ?? "",
 });
 
 export const editAssetToUpdate = (
@@ -114,7 +113,6 @@ export const editAssetToUpdate = (
 	asset: IAssetViewModel,
 	categoryAssets: ICategoryAsset | null,
 	ownerAssets: IOwnerAsset | null,
-	locationAssets: ILocationAsset | null,
 ): IAssetViewModelUpdate => ({
 	assetId: asset.id,
 	assetName: form.assetName,
@@ -126,7 +124,6 @@ export const editAssetToUpdate = (
 	selectedLocationId: form.locationId,
 	categoryAssetsId: categoryAssets?.id ?? null,
 	ownerAssetsId: ownerAssets?.id ?? null,
-	locationAssetsId: locationAssets?.id ?? null,
 });
 
 // Create renders exactly the same fields as edit; only the title (the
@@ -178,7 +175,9 @@ export const categoriesToOptions = (categories: ICategory[]): SelectOption[] =>
 	toOptions(categories, (c) => c.categoryName);
 
 export const ownersToOptions = (owners: IOwner[]): SelectOption[] =>
-	toOptions(owners, (o) => o.ownerName);
+	toOptions(owners, (o) =>
+		o.displayName ? `${o.displayName} (${o.ownerName})` : o.ownerName,
+	);
 
 export const locationsToOptions = (locations: ILocation[]): SelectOption[] =>
 	toOptions(locations, (l) => l.locationName);

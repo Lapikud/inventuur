@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Base.Domain;
 using Base.Resources.Errors;
 
@@ -14,7 +14,7 @@ public class Room : BaseEntity
         ErrorMessageResourceType = typeof(ValidationErrors))]
     public string RoomName { get; set; } = default!;
 
-    
+
     [MaxLength(255,
         ErrorMessageResourceName = nameof(ValidationErrors.MaxLengthValidationError),
         ErrorMessageResourceType = typeof(ValidationErrors))]
@@ -23,6 +23,7 @@ public class Room : BaseEntity
         ErrorMessageResourceType = typeof(ValidationErrors))]
     public string Comment { get; set; } = default!;
 
-    public ICollection<CupboardInRoom>? CupboardsInRooms { get; set; }
+    public ICollection<Cupboard>? Cupboards { get; set; }
 
+    public ICollection<Location>? Locations { get; set; }
 }

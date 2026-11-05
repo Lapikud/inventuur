@@ -13,7 +13,7 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
     {
     }
 
-    public async Task<App.DAL.DTO.Asset> CreateNewAsset(string assetName, string comment, string? serialNumber = null, string? barcode = null)
+    public async Task<App.DAL.DTO.Asset> CreateNewAsset(string assetName, string comment, string? serialNumber = null, string? barcode = null, Guid? locationId = null)
     {
         var asset = new App.DAL.DTO.Asset
         {
@@ -22,6 +22,7 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
             Comment = comment,
             SerialNumber = serialNumber,
             Barcode = barcode,
+            LocationId = locationId,
         };
         var addedAsset = await this.AddAsync(asset);
         return addedAsset;
@@ -34,12 +35,8 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
         var assetVm = await query
             .Include(a => a.OwnerAssets)! // Load OwnerAssets
             .ThenInclude(oa => oa.Owner) // Load Owner
-            .Include(a => a.LocationsAssetsCollection)! // Load LocationAssets
-            .ThenInclude(la => la.Location) // Load Location
-            .ThenInclude(l => l!.LocationsInCupboards)! // Load LocationInCupboard
-            .ThenInclude(lc => lc.Cupboard) // Load Cupboard
-            .ThenInclude(c => c!.CupboardsInRooms)! // Load CupboardInRoom
-            .ThenInclude(cr => cr.Room) // Load Room
+            .Include(a => a.Location)! // Load Location
+            .ThenInclude(l => l!.Room) // Load Room
             .Include(a => a.CategoryAssetsCollection)! // Load CategoryAssets
             .ThenInclude(ca => ca.Category) // Load Category
             .Include(a => a.AssetReservations)! // Load AssetReservations
@@ -51,23 +48,26 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
                 AssetName = a.AssetName,
                 SerialNumber = a.SerialNumber,
                 Barcode = a.Barcode,
+                Slug = a.Slug,
+                Visibility = a.Visibility,
+                HasPhoto = a.HasPhoto,
+                LastAuditAt = a.LastAuditAt,
+                LastAuditBy = a.LastAuditBy,
+                LocationId = a.LocationId,
+                Tags = a.AssetTags!.Select(at => at.Tag!.TagName).OrderBy(n => n).ToList(),
+                Comment = a.Comment,
                 CategoryName = a.CategoryAssetsCollection!
                     .Select(ca => ca.Category!.CategoryName)
                     .First(),
                 OwnerName = a.OwnerAssets!.Select(oa => oa.Owner!.OwnerName).First(),
-                RoomName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .SelectMany(lc => lc.Cupboard!.CupboardsInRooms!)
-                    .Select(cr => cr.Room!.RoomName)
-                    .First(),
-                CupboardName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .Select(lc => lc.Cupboard!.CodeName)
-                    .First(),
-                ShelfNum = a.LocationsAssetsCollection!.Select(la => la.Location!.ShelfNum).FirstOrDefault(),
-                Column = a.LocationsAssetsCollection!.Select(la => la.Location!.Column).FirstOrDefault(),
-                ClosestReservationBy = a.AssetReservations!.Where(ar => !ar.IsReturned && ar.ReservationTo >= now).Select(ar => ar.User!.Username).FirstOrDefault() ?? "-",
-                AddedAt = a.LocationsAssetsCollection!.Select(la => la.CreatedAt).FirstOrDefault(),
+                RoomName = a.Location != null ? a.Location.Room!.RoomName : "",
+                CupboardName = a.Location != null && a.Location.Cupboard != null
+                    ? a.Location.Cupboard.CodeName
+                    : "-",
+                ShelfNum = a.Location != null ? a.Location.ShelfNum : 0,
+                Column = a.Location != null ? a.Location.Column : 0,
+                ClosestReservationBy = a.AssetReservations!.Where(ar => !ar.IsReturned && ar.ReservationTo >= now).Select(ar => ar.User!.DisplayName ?? ar.User!.Username).FirstOrDefault() ?? "-",
+                AddedAt = a.Location != null ? a.Location.CreatedAt : a.CreatedAt,
                 Reserved = a.AssetReservations!.Any(ar => !ar.IsReturned && ar.ReservationTo >= now),
                 ReservationTo = a.AssetReservations!
                     .Where(ar => !ar.IsReturned)
@@ -86,12 +86,8 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
         return await query
             .Include(a => a.OwnerAssets)! // Load OwnerAssets
             .ThenInclude(oa => oa.Owner) // Load Owner
-            .Include(a => a.LocationsAssetsCollection)! // Load LocationAssets
-            .ThenInclude(la => la.Location) // Load Location
-            .ThenInclude(l => l!.LocationsInCupboards)! // Load LocationInCupboard
-            .ThenInclude(lc => lc.Cupboard) // Load Cupboard
-            .ThenInclude(c => c!.CupboardsInRooms)! // Load CupboardInRoom
-            .ThenInclude(cr => cr.Room) // Load Room
+            .Include(a => a.Location)! // Load Location
+            .ThenInclude(l => l!.Room) // Load Room
             .Include(a => a.CategoryAssetsCollection)! // Load CategoryAssets
             .ThenInclude(ca => ca.Category) // Load Category
             .Include(a => a.AssetReservations)! // Load AssetReservations
@@ -103,23 +99,26 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
                 AssetName = a.AssetName,
                 SerialNumber = a.SerialNumber,
                 Barcode = a.Barcode,
+                Slug = a.Slug,
+                Visibility = a.Visibility,
+                HasPhoto = a.HasPhoto,
+                LastAuditAt = a.LastAuditAt,
+                LastAuditBy = a.LastAuditBy,
+                LocationId = a.LocationId,
+                Tags = a.AssetTags!.Select(at => at.Tag!.TagName).OrderBy(n => n).ToList(),
+                Comment = a.Comment,
                 CategoryName = a.CategoryAssetsCollection!
                     .Select(ca => ca.Category!.CategoryName)
                     .First(),
                 OwnerName = a.OwnerAssets!.Select(oa => oa.Owner!.OwnerName).First(),
-                RoomName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .SelectMany(lc => lc.Cupboard!.CupboardsInRooms!)
-                    .Select(cr => cr.Room!.RoomName)
-                    .First(),
-                CupboardName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .Select(lc => lc.Cupboard!.CodeName)
-                    .First(),
-                ShelfNum = a.LocationsAssetsCollection!.Select(la => la.Location!.ShelfNum).FirstOrDefault(),
-                Column = a.LocationsAssetsCollection!.Select(la => la.Location!.Column).FirstOrDefault(),
-                ClosestReservationBy = a.AssetReservations!.Where(ar => !ar.IsReturned && ar.ReservationTo >= now).Select(ar => ar.User!.Username).FirstOrDefault() ?? "-",
-                AddedAt = a.LocationsAssetsCollection!.Select(la => la.CreatedAt).FirstOrDefault(),
+                RoomName = a.Location != null ? a.Location.Room!.RoomName : "",
+                CupboardName = a.Location != null && a.Location.Cupboard != null
+                    ? a.Location.Cupboard.CodeName
+                    : "-",
+                ShelfNum = a.Location != null ? a.Location.ShelfNum : 0,
+                Column = a.Location != null ? a.Location.Column : 0,
+                ClosestReservationBy = a.AssetReservations!.Where(ar => !ar.IsReturned && ar.ReservationTo >= now).Select(ar => ar.User!.DisplayName ?? ar.User!.Username).FirstOrDefault() ?? "-",
+                AddedAt = a.Location != null ? a.Location.CreatedAt : a.CreatedAt,
                 Reserved = a.AssetReservations!.Any(ar => !ar.IsReturned && ar.ReservationTo >= now)
             })
             .ToListAsync();
@@ -131,12 +130,8 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
         return await query
             .Include(a => a.OwnerAssets)! // Load OwnerAssets
             .ThenInclude(oa => oa.Owner) // Load Owner
-            .Include(a => a.LocationsAssetsCollection)! // Load LocationAssets
-            .ThenInclude(la => la.Location) // Load Location
-            .ThenInclude(l => l!.LocationsInCupboards)! // Load LocationInCupboard
-            .ThenInclude(lc => lc.Cupboard) // Load Cupboard
-            .ThenInclude(c => c!.CupboardsInRooms)! // Load CupboardInRoom
-            .ThenInclude(cr => cr.Room) // Load Room
+            .Include(a => a.Location)! // Load Location
+            .ThenInclude(l => l!.Room) // Load Room
             .Include(a => a.CategoryAssetsCollection)! // Load CategoryAssets
             .ThenInclude(ca => ca.Category) // Load Category
             .Include(a => a.AssetReservations)! // Load assetReservations
@@ -150,23 +145,26 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
                 AssetName = a.AssetName,
                 SerialNumber = a.SerialNumber,
                 Barcode = a.Barcode,
+                Slug = a.Slug,
+                Visibility = a.Visibility,
+                HasPhoto = a.HasPhoto,
+                LastAuditAt = a.LastAuditAt,
+                LastAuditBy = a.LastAuditBy,
+                LocationId = a.LocationId,
+                Tags = a.AssetTags!.Select(at => at.Tag!.TagName).OrderBy(n => n).ToList(),
+                Comment = a.Comment,
                 CategoryName = a.CategoryAssetsCollection!
                     .Select(ca => ca.Category!.CategoryName)
                     .First(),
                 OwnerName = a.OwnerAssets!.Select(oa => oa.Owner!.OwnerName).First(),
-                RoomName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .SelectMany(lc => lc.Cupboard!.CupboardsInRooms!)
-                    .Select(cr => cr.Room!.RoomName)
-                    .First(),
-                CupboardName = a.LocationsAssetsCollection!
-                    .SelectMany(la => la.Location!.LocationsInCupboards!)
-                    .Select(lc => lc.Cupboard!.CodeName)
-                    .First(),
-                ShelfNum = a.LocationsAssetsCollection!.Select(la => la.Location!.ShelfNum).FirstOrDefault(),
-                Column = a.LocationsAssetsCollection!.Select(la => la.Location!.Column).FirstOrDefault(),
-                ClosestReservationBy = a.AssetReservations!.Where(ar => !ar.IsReturned).Select(ar => ar.User!.Username).FirstOrDefault() ?? "-",
-                AddedAt = a.LocationsAssetsCollection!.Select(la => la.CreatedAt).FirstOrDefault(),
+                RoomName = a.Location != null ? a.Location.Room!.RoomName : "",
+                CupboardName = a.Location != null && a.Location.Cupboard != null
+                    ? a.Location.Cupboard.CodeName
+                    : "-",
+                ShelfNum = a.Location != null ? a.Location.ShelfNum : 0,
+                Column = a.Location != null ? a.Location.Column : 0,
+                ClosestReservationBy = a.AssetReservations!.Where(ar => !ar.IsReturned).Select(ar => ar.User!.DisplayName ?? ar.User!.Username).FirstOrDefault() ?? "-",
+                AddedAt = a.Location != null ? a.Location.CreatedAt : a.CreatedAt,
                 Reserved = true,
                 ReservationId = a.AssetReservations!
                     .Where(ar => ar.UserId == userId && !ar.IsReturned)
@@ -187,10 +185,12 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
         var query = GetQuery();
         query = query
             .Include(x => x.CategoryAssetsCollection)
-            .Include(x => x.LocationsAssetsCollection)
+            .Include(x => x.Location)
             .Include(x => x.OwnerAssets)
             .Include(x => x.RemovedAssetsCollection)
             .Include(x => x.AssetReservations)
+            .Include(x => x.AssetTags)!
+            .ThenInclude(at => at.Tag)
             .OrderBy(a => a.AssetName);
         return (await query.ToListAsync()).Select(e => Mapper.Map(e)!);
     }
@@ -200,5 +200,31 @@ public class AssetRepository : BaseRepository<App.DAL.DTO.Asset, App.Domain.Asse
         var notRemoved = (await this.AllAsync())
             .Where(a => (a.RemovedAssetsCollection == null || !a.RemovedAssetsCollection.Any())).ToList();
         return notRemoved;
+    }
+
+    public async Task<Asset?> AuditAssetAsync(Guid assetId, string userName)
+    {
+        var asset = await RepositoryDbSet
+            .FirstOrDefaultAsync(a => a.Id == assetId);
+        if (asset == null) return null;
+
+        asset.LastAuditAt = DateTime.UtcNow;
+        asset.LastAuditBy = userName;
+        return Mapper.Map(asset);
+    }
+
+    public async Task<Asset?> FindBySlugAsync(string slug)
+    {
+        var asset = await GetQuery()
+            .Include(a => a.AssetTags)!
+            .ThenInclude(at => at.Tag)
+            .Include(a => a.AssetReservations)
+            .FirstOrDefaultAsync(a => a.Slug == slug);
+        return Mapper.Map(asset);
+    }
+
+    public async Task<bool> IsSlugFreeAsync(string slug)
+    {
+        return !await RepositoryDbSet.AnyAsync(a => a.Slug == slug);
     }
 }

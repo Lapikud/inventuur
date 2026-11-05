@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using App.DAL.EF;
+using App.DTO.v1;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -90,6 +91,12 @@ namespace WebApp.ApiControllers
                 return BadRequest();
             }
 
+            var roomError = await ValidateLocationRelationsAsync(location.RoomId, location.CupboardId);
+            if (roomError != null)
+            {
+                return roomError;
+            }
+
             try
             {
                 await _bll.LocationService.UpdateAsync(_mapper.Map(location)!);
@@ -122,6 +129,12 @@ namespace WebApp.ApiControllers
         [ProducesResponseType(typeof(App.DTO.v1.Location), StatusCodes.Status201Created)]
         public async Task<ActionResult<App.DTO.v1.Location>> PostLocation(App.DTO.v1.CreateObjects.LocationCreate location)
         {
+            var roomError = await ValidateLocationRelationsAsync(location.RoomId, location.CupboardId);
+            if (roomError != null)
+            {
+                return roomError;
+            }
+
             var bllEntity = _mapper.Map(location);
             await _bll.LocationService.AddAsync(bllEntity);
             await _bll.SaveChangesAsync();
@@ -146,20 +159,46 @@ namespace WebApp.ApiControllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteLocation(Guid id)
         {
-            var locationAssets = (await _bll.LocationAssetsService.AllAsync()).Where(la => la.LocationId == id).ToList();
-            var locationsInCupboards = (await _bll.LocationInCupboardService.AllAsync()).Where(lic => lic.LocationId == id).ToList();
-            foreach (var la in locationAssets)
+            // Restrict FKs would turn this into a 500; say it humanly instead.
+            var assetsPlacedHere = (await _bll.AssetService.AllAsync())
+                .Any(a => a.LocationId == id);
+            if (assetsPlacedHere)
             {
-                await _bll.LocationAssetsService.RemoveAsync(la.Id);
+                return BadRequest(new Message($"Location is in use by an asset; move or remove those assets first."));
             }
-            foreach (var lic in locationsInCupboards)
-            {
-                await _bll.LocationInCupboardService.RemoveAsync(lic.Id);
-            }
+
             await _bll.LocationService.RemoveAsync(id);
             await _bll.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Cross-checks the two placement FKs: the room must exist, and when a
+        /// cupboard is given, it must belong to that same room — SQL cannot
+        /// express the combination as one constraint, so the app enforces it.
+        /// </summary>
+        private async Task<ActionResult?> ValidateLocationRelationsAsync(Guid roomId, Guid? cupboardId)
+        {
+            if (!await _bll.RoomService.ExistsAsync(roomId))
+            {
+                return BadRequest(new Message("Unknown room."));
+            }
+
+            if (cupboardId != null)
+            {
+                var cupboard = await _bll.CupboardService.FindAsync(cupboardId.Value);
+                if (cupboard == null)
+                {
+                    return BadRequest(new Message("Unknown cupboard."));
+                }
+                if (cupboard.RoomId != roomId)
+                {
+                    return BadRequest(new Message("Cupboard does not belong to the selected room."));
+                }
+            }
+
+            return null;
         }
     }
 }

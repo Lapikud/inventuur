@@ -30,6 +30,22 @@ public class AssetViewModel : IDomainId
         ResourceType = typeof(App.Resources.ViewModel.AssetViewModel))]
     public string? Barcode { get; set; }
 
+    public string? Slug { get; set; }
+
+    public App.Domain.AssetVisibility Visibility { get; set; } = App.Domain.AssetVisibility.Normal;
+
+    public bool HasPhoto { get; set; }
+
+    public DateTime? LastAuditAt { get; set; }
+
+    public string? LastAuditBy { get; set; }
+
+    public Guid? LocationId { get; set; }
+
+    public List<string> Tags { get; set; } = [];
+
+    public string? Comment { get; set; }
+
     [MaxLength(128,
         ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.MaxLengthValidationError),
         ErrorMessageResourceType = typeof(Base.Resources.Errors.ValidationErrors))]

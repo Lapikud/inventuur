@@ -1,4 +1,4 @@
-﻿using Base.Contracts;
+using Base.Contracts;
 
 namespace App.DTO.v1.Mappers;
 
@@ -13,6 +13,8 @@ public class LocationMapper : IMapper<App.DTO.v1.Location, App.BLL.DTO.Location>
             LocationName = entity.LocationName,
             ShelfNum = entity.ShelfNum,
             Column = entity.Column,
+            RoomId = entity.RoomId,
+            CupboardId = entity.CupboardId,
         };
         return res;
     }
@@ -26,10 +28,12 @@ public class LocationMapper : IMapper<App.DTO.v1.Location, App.BLL.DTO.Location>
             LocationName = entity.LocationName,
             ShelfNum = entity.ShelfNum,
             Column = entity.Column,
+            RoomId = entity.RoomId,
+            CupboardId = entity.CupboardId,
         };
         return res;
     }
-    
+
     public BLL.DTO.Location Map(App.DTO.v1.CreateObjects.LocationCreate entity)
     {
         var res = new App.BLL.DTO.Location()
@@ -38,6 +42,8 @@ public class LocationMapper : IMapper<App.DTO.v1.Location, App.BLL.DTO.Location>
             LocationName = entity.LocationName,
             ShelfNum = entity.ShelfNum,
             Column = entity.Column,
+            RoomId = entity.RoomId,
+            CupboardId = entity.CupboardId,
         };
         return res;
     }

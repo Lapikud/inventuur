@@ -3,6 +3,8 @@
 import { AccountContext } from "@/context/AccountContext";
 import { accountService } from "@/services";
 import { ApiError, unwrap } from "@/services/errors";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
@@ -41,7 +43,7 @@ export default function Login() {
 		onSuccess: (identity) => {
 			setAccountInfo!({
 				id: identity.id,
-				name: identity.username,
+				name: identity.displayName || identity.username,
 				roles: identity.roles,
 			});
 			// The query cache from any previous session is dropped by
@@ -66,8 +68,8 @@ export default function Login() {
 	};
 
 	return (
-		<div className="w-full max-w-lg mx-auto bg-white rounded-2xl shadow-2xl p-10 mt-52 mb-10">
-			<h1 className="text-3xl font-bold text-center mb-2 text-[#f0941d]">
+		<div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-raised p-8 mt-32 mb-10">
+			<h1 className="text-3xl font-bold text-center mb-6 text-brand-hover">
 				{tCommon("LoginTitle")}
 			</h1>
 			{errorMessage && (
@@ -83,16 +85,14 @@ export default function Login() {
 					>
 						{tCommon("Username")}
 					</label>
-					<input
+					<Input
 						id="Input_Username"
 						type="text"
 						autoComplete="off"
+						autoFocus
 						placeholder={tCommon("Username")}
-						className={`form-input w-full border rounded px-3 py-2 ${
-							errors.username
-								? "border-red-500"
-								: "border-gray-300"
-						}`}
+						aria-invalid={!!errors.username}
+						className={errors.username ? "border-red-500 focus-visible:ring-red-200" : ""}
 						{...register("username", {
 							required: {
 								value: true,
@@ -135,16 +135,16 @@ export default function Login() {
 					>
 						{tCommon("Password")}
 					</label>
-					<input
+					<Input
 						id="Input_Password"
 						type="password"
 						autoComplete="off"
 						placeholder={tCommon("Password")}
-						className={`form-input w-full border rounded px-3 py-2 ${
+						className={
 							errors.password
-								? "border-red-500"
-								: "border-gray-300"
-						}`}
+								? "border-red-500 focus-visible:ring-red-200"
+								: ""
+						}
 						{...register("password", {
 							required: {
 								value: true,
@@ -160,14 +160,15 @@ export default function Login() {
 						</p>
 					)}
 				</div>
-				<button
+				<Button
 					id="loginSubmit"
 					type="submit"
+					size="lg"
 					disabled={login.isPending}
-					className="w-full py-2 px-4 mt-2 bg-[#f0941d] hover:bg-[#ffa80d] text-white font-semibold rounded-lg shadow transition-colors duration-200 disabled:opacity-50"
+					className="w-full"
 				>
 					{login.isPending ? tCommon("Loading") : tCommon("LoginLink")}
-				</button>
+				</Button>
 			</form>
 		</div>
 	);

@@ -18,17 +18,16 @@ public class CupboardBLLMapperTest
     public void Map_BllToDal_ShouldCopyScalarsAndCollections()
     {
         var id = Guid.NewGuid();
+        var roomId = Guid.NewGuid();
+        var locationId = Guid.NewGuid();
         var src = new BllDto.Cupboard
         {
             Id = id,
             CodeName = "C1",
-            CupboardsInRooms = new List<BllDto.CupboardInRoom>
+            RoomId = roomId,
+            Locations = new List<BllDto.Location>
             {
-                new() { Id = Guid.NewGuid(), CupboardId = id, RoomId = Guid.NewGuid(), Comment = "x" }
-            },
-            LocationsInCupboards = new List<BllDto.LocationInCupboard>
-            {
-                new() { Id = Guid.NewGuid(), LocationId = Guid.NewGuid(), CupboardId = id }
+                new() { Id = locationId, LocationName = "L", ShelfNum = 1, Column = 1, RoomId = roomId, CupboardId = id }
             }
         };
 
@@ -37,19 +36,25 @@ public class CupboardBLLMapperTest
         Assert.NotNull(dst);
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.CodeName, dst.CodeName);
-        Assert.Single(dst.CupboardsInRooms!);
-        Assert.Single(dst.LocationsInCupboards!);
-        Assert.All(dst.CupboardsInRooms!, cir => { Assert.Null(cir.Cupboard); Assert.Null(cir.Room); });
-        Assert.All(dst.LocationsInCupboards!, lic => { Assert.Null(lic.Cupboard); Assert.Null(lic.Location); });
+        Assert.Equal(src.RoomId, dst.RoomId);
+        Assert.Null(dst.Room);
+        Assert.Single(dst.Locations!);
+        var mappedLocation = dst.Locations!.First();
+        Assert.Equal(locationId, mappedLocation.Id);
+        Assert.Equal(src.RoomId, mappedLocation.RoomId);
+        Assert.Equal(id, mappedLocation.CupboardId);
+        Assert.Null(mappedLocation.Room);
+        Assert.Null(mappedLocation.Cupboard);
     }
 
     [Fact]
     public void Map_DalToBll_ShouldCopyScalars()
     {
-        var src = new DalDto.Cupboard { Id = Guid.NewGuid(), CodeName = "X" };
+        var src = new DalDto.Cupboard { Id = Guid.NewGuid(), CodeName = "X", RoomId = Guid.NewGuid() };
         var dst = _mapper.Map(src);
         Assert.NotNull(dst);
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.CodeName, dst.CodeName);
+        Assert.Equal(src.RoomId, dst.RoomId);
     }
 }

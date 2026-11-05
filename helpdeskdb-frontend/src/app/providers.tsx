@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
+import { Toaster } from "sonner";
 import { ApiError } from "@/services/errors";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<QueryClientProvider client={queryClient}>
 			{children}
+			{/* Toasts for row-level failures that have no inline surface (e.g.
+			    photo upload on the overview). Mounted here so every page can
+			    toast without re-mounting it. */}
+			<Toaster />
 			<ReactQueryDevtools initialIsOpen={false} />
 		</QueryClientProvider>
 	);

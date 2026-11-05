@@ -1,29 +1,14 @@
 "use client";
 
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "../lib/utils";
-import { Button } from "./ui/button";
-import { Calendar } from "./ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { useEffect, useState } from "react";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "./ui/select";
-import { ScrollArea } from "./ui/scroll-area";
+import { useState } from "react";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
-const DEFAULT_TIME = "05:00";
 
 /**
  * The calendar window a *new* booking may use: yesterday through 30 days out.
  * Widened to also cover an existing reservation's range, so an edit dialog can
  * re-pick dates already on the record — a reservation that started last week
- * would otherwise open onto a calendar of entirely disabled days.
+ * would otherwise open with its start date unpickable.
  */
 export function reservationBounds(from?: Date | null, to?: Date | null) {
 	const existing = [from, to].filter((d): d is Date => d instanceof Date);
@@ -39,131 +24,76 @@ export function reservationBounds(from?: Date | null, to?: Date | null) {
 	};
 }
 
+/**
+ * Native datetime-local value: "YYYY-MM-DDTHH:mm". `new Date(...)` parses it as
+ * LOCAL time, matching how the old minute-precision picker behaved.
+ */
+const toLocalInputValue = (date: Date): string => {
+	const pad = (n: number) => String(n).padStart(2, "0");
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 interface DateTimePickerProps {
 	value: Date | null;
 	onChange: (date: Date | null) => void;
 	/**
-	 * Earliest selectable day. Defaults to yesterday — right for booking something
-	 * new, but the edit dialogs must widen it to include the reservation's existing
-	 * start date, which is usually further in the past and would otherwise be
-	 * unpickable (leaving the user stuck on a calendar of disabled days).
+	 * Earliest selectable moment. Defaults to yesterday — right for booking
+	 * something new, but the edit dialogs pass `reservationBounds` so dates
+	 * already on the record stay selectable.
 	 */
 	minDate?: Date;
-	/** Latest selectable day. Defaults to 30 days out. */
+	/** Latest selectable moment. Defaults to 30 days out. */
 	maxDate?: Date;
+	/** Wiring for ReservationTimeFields' <label htmlFor>. */
+	id?: string;
 }
 
+/**
+ * A single minute-precision date-time picker. A native
+ * <input type="datetime-local"> — no calendar popover dependency, and the
+ * mobile OS date pickers come for free.
+ */
 export function DateTimePicker({
 	value,
 	onChange,
 	minDate,
 	maxDate,
+	id,
 }: DateTimePickerProps) {
-	const [isOpen, setIsOpen] = useState(false);
-	const [date, setDate] = useState<Date | null>(value ?? null);
-	const [time, setTime] = useState<string>(
-		value ? format(value, "HH:mm") : DEFAULT_TIME,
-	);
-
-	// Keep local state in sync with the parent-controlled value — including when it
-	// goes back to null (useDateRangeForm does that on every open/close). Without the
-	// else branch the trigger keeps displaying the old date while the parent holds
-	// null, so the dialog shows a date but validation reports BothDatesRequired.
-	useEffect(() => {
-		if (value) {
-			setDate(value);
-			setTime(format(value, "HH:mm"));
-		} else {
-			setDate(null);
-			setTime(DEFAULT_TIME);
-		}
-	}, [value]);
-
-	const handleDateChange = (selectedDate: Date | undefined) => {
-		if (!selectedDate) return;
-
-		// Apply current time. Clone first — react-day-picker owns selectedDate.
-		const [hours, minutes] = time.split(":");
-		const newDate = new Date(selectedDate.getTime());
-		newDate.setHours(parseInt(hours), parseInt(minutes));
-
-		setDate(newDate);
-		onChange(newDate);
-		setIsOpen(false);
-	};
-
-	const handleTimeChange = (selectedTime: string) => {
-		setTime(selectedTime);
-		if (!date) return;
-
-		const [hours, minutes] = selectedTime.split(":");
-		const newDate = new Date(date.getTime());
-		newDate.setHours(parseInt(hours), parseInt(minutes));
-		setDate(newDate);
-		onChange(newDate);
-	};
+	// Compute the default window once per mount, not per render — Date.now()
+	// is impure, and the react-hooks rules correctly flag calling it during
+	// render. Re-mounts (dialog reopen) recalculate naturally.
+	const [defaultBounds] = useState(() => {
+		if (minDate && maxDate) return { min: minDate, max: maxDate };
+		const now = Date.now();
+		return {
+			min: minDate ?? new Date(now - DAY_MS),
+			max: maxDate ?? new Date(now + DAY_MS * 30),
+		};
+	});
+	const { min, max } = defaultBounds;
 
 	return (
-		<div className="flex w-full gap-4">
-			<Popover open={isOpen} onOpenChange={setIsOpen}>
-				<PopoverTrigger asChild>
-					<Button
-						variant={"outline"}
-						className={cn(
-							"w-full font-normal",
-							!date && "text-muted-foreground",
-						)}
-					>
-						{date ? (
-							`${format(date, "PPP")}, ${time}`
-						) : (
-							<span>Pick a date</span>
-						)}
-						<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent className="w-auto p-0" align="start">
-					<Calendar
-						mode="single"
-						captionLayout="dropdown"
-						selected={date || undefined}
-						onSelect={handleDateChange}
-						onDayClick={() => setIsOpen(false)}
-						startMonth={new Date(2000, 0)}
-						endMonth={new Date(new Date().getFullYear(), 11)}
-						disabled={(day) =>
-							Number(day) <
-								(minDate ? Number(minDate) : Date.now() - DAY_MS) ||
-							Number(day) >
-								(maxDate ? Number(maxDate) : Date.now() + DAY_MS * 30)
-						}
-						defaultMonth={date ?? undefined}
-					/>
-				</PopoverContent>
-			</Popover>
-
-			<Select value={time} onValueChange={handleTimeChange}>
-				<SelectTrigger className="font-normal focus:ring-0 w-[120px] focus:ring-offset-0">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					<ScrollArea className="h-[15rem]">
-						{Array.from({ length: 144 }).map((_, i) => {
-							const hour = Math.floor(i / 6)
-								.toString()
-								.padStart(2, "0");
-							const minute = ((i % 6) * 10)
-								.toString()
-								.padStart(2, "0");
-							return (
-								<SelectItem key={i} value={`${hour}:${minute}`}>
-									{hour}:{minute}
-								</SelectItem>
-							);
-						})}
-					</ScrollArea>
-				</SelectContent>
-			</Select>
-		</div>
+		<input
+			id={id}
+			type="datetime-local"
+			// Same bounds as above: clamps both the picker UI and typing.
+			min={toLocalInputValue(min)}
+			max={toLocalInputValue(max)}
+			value={value ? toLocalInputValue(value) : ""}
+			onChange={(e) => {
+				if (!e.target.value) {
+					onChange(null);
+					return;
+				}
+				const date = new Date(e.target.value);
+				if (Number.isNaN(date.getTime())) {
+					onChange(null);
+					return;
+				}
+				onChange(date);
+			}}
+			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+		/>
 	);
 }

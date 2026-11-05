@@ -10,6 +10,8 @@ import {
 } from "react-hook-form";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import ErrorBanner from "@/components/ErrorBanner";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Modal } from "./Modal";
 import { ModalFooter } from "./ModalFooter";
 import {
@@ -67,10 +69,15 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 		handleSubmit,
 		reset,
 		setValue,
+		watch,
 		formState: { errors, isSubmitting },
 	} = useForm<TForm>({
 		defaultValues: config.defaultValues,
 	});
+
+	// Dependent-select support: a value here only re-renders the fields that
+	// actually consume it, so subscribing to the whole form stays cheap.
+	const watched = watch();
 
 	// Opt-in barcode scanning: drop the decoded burst into `scanField`. The
 	// page-level scanner is disabled while any dialog is open, so this is the
@@ -197,6 +204,15 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 
 	if (mode === "edit" && !initialValues) return null;
 
+	// Autofocus lands on the first editable field so a dialog opens ready to
+	// type — display/readonly rows don't steal it.
+	const firstEditableName = config.fields.find(
+		(field) =>
+			field.kind === "text" ||
+			field.kind === "number" ||
+			field.kind === "select",
+	)?.name;
+
 	const fieldErrors = errors as unknown as Partial<
 		Record<string, { message?: unknown }>
 	>;
@@ -258,6 +274,23 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 						| string
 						| undefined;
 
+					// Dependent selects (e.g. cupboards narrowed to the picked
+					// room). An empty dependency value shows every option. The
+					// Record cast exists because watch() of a generic TForm cannot be
+					// indexed with Path<TForm> for every TForm.
+					const watchedValues = watched as Record<string, unknown>;
+					const filterField =
+						field.kind === "select" ? field.filterByField : undefined;
+					const fieldOptions =
+						field.kind === "select" && filterField
+							? (options?.[field.optionsKey] ?? []).filter(
+									(option) =>
+										!watchedValues[filterField] ||
+										option.filterKey === undefined ||
+										option.filterKey === watchedValues[filterField],
+								)
+							: undefined;
+
 					return (
 						<div key={field.name}>
 							<label
@@ -271,7 +304,8 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 								(field.multiline ? (
 									<textarea
 										id={field.name}
-										className="w-full p-2 border border-gray-300 rounded"
+										className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition-colors focus-visible:outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30 motion-reduce:transition-none"
+										autoFocus={field.name === firstEditableName}
 										placeholder={
 											field.placeholderKey
 												? tEntity(field.placeholderKey)
@@ -283,10 +317,10 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 										)}
 									/>
 								) : (
-									<input
+									<Input
 										id={field.name}
 										type="text"
-										className="w-full p-2 border border-gray-300 rounded"
+										autoFocus={field.name === firstEditableName}
 										placeholder={
 											field.placeholderKey
 												? tEntity(field.placeholderKey)
@@ -305,10 +339,10 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 								))}
 
 							{field.kind === "number" && (
-								<input
+								<Input
 									id={field.name}
 									type="number"
-									className="w-full p-2 border border-gray-300 rounded"
+									autoFocus={field.name === firstEditableName}
 									placeholder={field.placeholder}
 									{...register(
 										field.name,
@@ -318,9 +352,9 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 							)}
 
 							{field.kind === "select" && (
-								<select
+								<Select
 									id={field.name}
-									className="w-full p-2 border border-gray-300 rounded"
+								autoFocus={field.name === firstEditableName}
 									{...register(
 										field.name,
 										field.required
@@ -336,12 +370,12 @@ export const EntityFormDialog = <TForm extends FieldValues>({
 										{tCommon(field.selectArticleKey ?? "SelectA")}{" "}
 										{fieldLabel}
 									</option>
-									{(options?.[field.optionsKey] ?? []).map((option) => (
+									{(fieldOptions ?? options?.[field.optionsKey] ?? []).map((option) => (
 										<option key={option.value} value={option.value}>
 											{option.label}
 										</option>
 									))}
-								</select>
+								</Select>
 							)}
 
 							{errorMessage && (

@@ -16,18 +16,25 @@ public class AssetBLLMapper: IMapper<App.BLL.DTO.Asset, App.DAL.DTO.Asset>
             Comment = entity.Comment,
             SerialNumber = entity.SerialNumber,
             Barcode = entity.Barcode,
-            LocationsAssetsCollection = entity.LocationsAssetsCollection?.Select(la => new App.DAL.DTO.LocationAssets()
-            {
-                Id = la.Id,
-                AssetId = la.AssetId,
-                Asset = null, // la.Asset,
-                
-                LocationId = la.LocationId,
-                Location = null,
-                
-                CreatedBy = la.CreatedBy
-                
-            }).ToList(),
+            Slug = entity.Slug,
+            Visibility = entity.Visibility,
+            HasPhoto = entity.HasPhoto,
+            LastAuditAt = entity.LastAuditAt,
+            LastAuditBy = entity.LastAuditBy,
+            LocationId = entity.LocationId,
+            Location = entity.Location == null
+                ? null
+                : new App.DAL.DTO.Location()
+                {
+                    Id = entity.Location.Id,
+                    LocationName = entity.Location.LocationName,
+                    ShelfNum = entity.Location.ShelfNum,
+                    Column = entity.Location.Column,
+                    RoomId = entity.Location.RoomId,
+                    Room = null,
+                    CupboardId = entity.Location.CupboardId,
+                    Cupboard = null,
+                },
             OwnerAssets = entity.OwnerAssets?.Select(oa => new App.DAL.DTO.OwnerAssets()
             {
                 Id = oa.Id,
@@ -69,6 +76,18 @@ public class AssetBLLMapper: IMapper<App.BLL.DTO.Asset, App.DAL.DTO.Asset>
                 ReservationTo = ar.ReservationTo,
                 IsReturned = ar.IsReturned,
             }).ToList(),
+            AssetTags = entity.AssetTags?.Select(at => new App.DAL.DTO.AssetTag()
+            {
+                Id = at.Id,
+                AssetId = at.AssetId,
+                Asset = null,
+                TagId = at.TagId,
+                Tag = at.Tag == null ? null : new App.DAL.DTO.Tag()
+                {
+                    Id = at.Tag.Id,
+                    TagName = at.Tag.TagName,
+                },
+            }).ToList(),
         };
         return res;
     }
@@ -84,18 +103,37 @@ public class AssetBLLMapper: IMapper<App.BLL.DTO.Asset, App.DAL.DTO.Asset>
             Comment = entity.Comment,
             SerialNumber = entity.SerialNumber,
             Barcode = entity.Barcode,
-            LocationsAssetsCollection = entity.LocationsAssetsCollection?.Select(la => new App.BLL.DTO.LocationAssets()
+            Slug = entity.Slug,
+            Visibility = entity.Visibility,
+            HasPhoto = entity.HasPhoto,
+            LastAuditAt = entity.LastAuditAt,
+            LastAuditBy = entity.LastAuditBy,
+            AssetTags = entity.AssetTags?.Select(at => new App.BLL.DTO.AssetTag()
             {
-                Id = la.Id,
-                AssetId = la.AssetId,
-                Asset = null, // la.Asset,
-                
-                LocationId = la.LocationId,
-                Location = null,
-                
-                CreatedBy = la.CreatedBy
-                
+                Id = at.Id,
+                AssetId = at.AssetId,
+                Asset = null,
+                TagId = at.TagId,
+                Tag = at.Tag == null ? null : new App.BLL.DTO.Tag()
+                {
+                    Id = at.Tag.Id,
+                    TagName = at.Tag.TagName,
+                },
             }).ToList(),
+            LocationId = entity.LocationId,
+            Location = entity.Location == null
+                ? null
+                : new App.BLL.DTO.Location()
+                {
+                    Id = entity.Location.Id,
+                    LocationName = entity.Location.LocationName,
+                    ShelfNum = entity.Location.ShelfNum,
+                    Column = entity.Location.Column,
+                    RoomId = entity.Location.RoomId,
+                    Room = null,
+                    CupboardId = entity.Location.CupboardId,
+                    Cupboard = null,
+                },
             OwnerAssets = entity.OwnerAssets?.Select(oa => new App.BLL.DTO.OwnerAssets()
             {
                 Id = oa.Id,

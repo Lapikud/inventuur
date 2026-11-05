@@ -92,83 +92,40 @@ export interface ICategoryAssetAdd {
 	createdBy: string;
 }
 
-// Cupboard
+// Cupboard — belongs to a room directly (no junction).
 export interface ICupboard extends IDomainId {
 	codeName: string;
+	roomId: string;
 }
 
 export interface ICupboardAdd {
 	codeName: string;
-}
-
-// Cupboard in room
-export interface ICupboardInRoom extends IDomainId {
-	comment: string;
-	cupboardId: string;
 	roomId: string;
 }
 
-export interface ICupboardInRoomWithNames extends ICupboardInRoom {
-	codeName: string;
-	roomName: string;
-}
-
-export interface ICupboardInRoomAdd {
-	comment: string;
-	cupboardId: string;
-	roomId: string;
-}
-
-// Location
+// Location — belongs to a room, optionally to a cupboard in that room
+// (direct FKs; the old junction stacks are gone).
 export interface ILocation extends IDomainId {
 	locationName: string;
 	shelfNum: number;
 	column: number;
+	roomId: string;
+	cupboardId: string | null;
 }
 
 export interface ILocationAdd {
 	locationName: string;
 	shelfNum: number;
 	column: number;
-}
-
-// Location asset
-export interface ILocationAsset extends IDomainId {
-	locationId: string;
-	assetId: string;
-	createdBy: string;
-}
-
-export interface ILocationAssetWithNames extends ILocationAsset {
-	assetName: string;
-	locationName: string;
-}
-
-export interface ILocationAssetAdd {
-	locationId: string;
-	assetId: string;
-	createdBy: string;
-}
-
-// Location in cupboard
-export interface ILocationInCupboard extends IDomainId {
-	locationId: string;
-	cupboardId: string;
-}
-
-export interface ILocationInCupboardWithNames extends ILocationInCupboard {
-	codeName: string;
-	locationName: string;
-}
-
-export interface ILocationInCupboardAdd {
-	locationId: string;
-	cupboardId: string;
+	roomId: string;
+	cupboardId: string | null;
 }
 
 // Owner
 export interface IOwner extends IDomainId {
 	ownerName: string;
+	/** First name of the matching user, when one exists; else null. */
+	displayName?: string | null;
 	comment: string;
 }
 
@@ -243,6 +200,8 @@ export interface IUserAssetAdd {
 // User
 export interface IUser extends IDomainId {
 	username: string;
+	/** First name from IPA; null when IPA has none (then show username). */
+	displayName?: string | null;
 }
 
 export interface IUserWithRoles extends IUser {
@@ -256,6 +215,15 @@ export interface IRole extends IDomainId {
 
 export interface IRoleAdd {
 	name: string;
+}
+
+// Tag
+export interface ITag extends IDomainId {
+	tagName: string;
+}
+
+export interface ITagAdd {
+	tagName: string;
 }
 
 // User role

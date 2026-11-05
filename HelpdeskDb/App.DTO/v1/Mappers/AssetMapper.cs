@@ -15,6 +15,11 @@ public class AssetMapper: IMapper<App.DTO.v1.Asset, App.BLL.DTO.Asset>
             Comment = entity.Comment,
             SerialNumber = entity.SerialNumber,
             Barcode = entity.Barcode,
+            Slug = entity.Slug,
+            Visibility = entity.Visibility,
+            HasPhoto = entity.HasPhoto,
+            LastAuditAt = entity.LastAuditAt,
+            LastAuditBy = entity.LastAuditBy,
         };
         return res;
     }
@@ -30,6 +35,8 @@ public class AssetMapper: IMapper<App.DTO.v1.Asset, App.BLL.DTO.Asset>
             Comment = entity.Comment,
             SerialNumber = entity.SerialNumber,
             Barcode = entity.Barcode,
+            Slug = entity.Slug,
+            Visibility = entity.Visibility,
         };
         return res;
     }
@@ -44,6 +51,8 @@ public class AssetMapper: IMapper<App.DTO.v1.Asset, App.BLL.DTO.Asset>
             Comment = entity.Comment,
             SerialNumber = entity.SerialNumber,
             Barcode = entity.Barcode,
+            Slug = entity.Slug,
+            Visibility = entity.Visibility,
         };
         return res;
     }

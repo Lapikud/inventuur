@@ -6,6 +6,12 @@ export type ConfirmResult = Promise<{ error?: string } | void>;
 export interface SelectOption {
 	value: string;
 	label: string;
+	/**
+	 * For dependent selects: the value of the OTHER field this option belongs
+	 * to (e.g. a cupboard option carries its room id). Consumed together with
+	 * a select field filterByField.
+	 */
+	filterKey?: string;
 }
 
 /** Maps an entity list to select options; `label` picks the display field. */
@@ -53,6 +59,10 @@ export type FieldSpec<TForm extends FieldValues> =
 			// are dynamic, so they come from the caller, not the config.
 			optionsKey: string;
 			required?: boolean;
+			// Dependent selects: while the named form field has a value,
+			// options are filtered to those whose filterKey matches it (all
+			// are shown while it is empty).
+			filterByField?: Path<TForm>;
 			// "common" namespace key for the empty-option article,
 			// e.g. "SelectAn"; defaults to "SelectA".
 			selectArticleKey?: string;

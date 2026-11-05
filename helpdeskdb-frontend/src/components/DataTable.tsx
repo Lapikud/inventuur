@@ -33,14 +33,14 @@ export default function DataTable({
 	const gridCols = gridMap[columns.length] ?? "grid-cols-4";
 
 	return (
-		<div className="bg-white rounded-3xl shadow-sm p-4">
+		<div className="bg-white rounded-3xl shadow-card p-4">
 			<div className="overflow-x-auto">
 				<div
-					className={`${minWidth} bg-[#efefef] rounded-2xl overflow-hidden`}
+					className={`${minWidth} bg-surface rounded-2xl overflow-hidden`}
 				>
 					{/* Header */}
 					<div
-						className={`bg-[#424242] text-white text-sm rounded-full mx-4 mt-4 px-6 py-3 grid gap-4 ${gridCols}`}
+						className={`bg-ink text-white text-sm rounded-full mx-4 mt-4 px-6 py-3 grid gap-4 ${gridCols}`}
 					>
 						{columns.map((col) => (
 							<div key={col} className="text-center">

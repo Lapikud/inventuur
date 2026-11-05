@@ -92,33 +92,18 @@ public class TestDatabaseFixture
         var cupboard1 = new Cupboard
         {
             Id = Guid.Parse("00000000-0000-0000-0000-000000000200"),
-            CodeName = "TestCupboard1"
+            CodeName = "TestCupboard1",
+            RoomId = room1.Id
         };
 
         var cupboard2 = new Cupboard
         {
             Id = Guid.Parse("00000000-0000-0000-0000-000000000201"),
-            CodeName = "TestCupboard2"
+            CodeName = "TestCupboard2",
+            RoomId = room2.Id
         };
 
         context.Cupboards.AddRange(cupboard1, cupboard2);
-
-        context.CupboardsInRooms.AddRange(
-            new CupboardInRoom()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000300"),
-                CupboardId = cupboard1.Id,
-                RoomId = room1.Id,
-                Comment = "Cupboard in room 1"
-            },
-            new CupboardInRoom()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000301"),
-                CupboardId = cupboard2.Id,
-                RoomId = room2.Id,
-                Comment = "Cupboard in room 2"
-            }
-        );
 
         var location1 = new Location()
         {
@@ -126,6 +111,8 @@ public class TestDatabaseFixture
             LocationName = "TestLocation1",
             ShelfNum = 1,
             Column = 1,
+            RoomId = room1.Id,
+            CupboardId = cupboard1.Id,
         };
 
         var location2 = new Location()
@@ -134,24 +121,11 @@ public class TestDatabaseFixture
             LocationName = "TestLocation2",
             ShelfNum = 2,
             Column = 2,
+            RoomId = room2.Id,
+            CupboardId = cupboard2.Id,
         };
 
         context.Locations.AddRange(location1, location2);
-
-        context.LocationsInCupboards.AddRange(
-            new LocationInCupboard()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000500"),
-                LocationId = location1.Id,
-                CupboardId = cupboard1.Id,
-            },
-            new LocationInCupboard()
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000501"),
-                LocationId = location2.Id,
-                CupboardId = cupboard2.Id,
-            }
-        );
 
         context.Owners.AddRange(
             new Owner()

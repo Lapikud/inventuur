@@ -17,33 +17,59 @@ public class LocationMapperTest
     [Fact]
     public void Map_BllToV1_ShouldCopyScalars()
     {
-        var src = new Bll.Location { Id = Guid.NewGuid(), LocationName = "L", ShelfNum = 1, Column = 2 };
+        var roomId = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
+        var src = new Bll.Location
+        {
+            Id = Guid.NewGuid(), LocationName = "L", ShelfNum = 1, Column = 2,
+            RoomId = roomId, CupboardId = cupboardId,
+        };
         var dst = _mapper.Map(src);
         Assert.NotNull(dst);
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.LocationName, dst.LocationName);
         Assert.Equal(src.ShelfNum, dst.ShelfNum);
         Assert.Equal(src.Column, dst.Column);
+        Assert.Equal(src.RoomId, dst.RoomId);
+        Assert.Equal(src.CupboardId, dst.CupboardId);
     }
 
     [Fact]
     public void Map_V1ToBll_ShouldCopyScalars()
     {
-        var src = new V1.Location { Id = Guid.NewGuid(), LocationName = "L", ShelfNum = 1, Column = 2 };
+        var roomId = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
+        var src = new V1.Location
+        {
+            Id = Guid.NewGuid(), LocationName = "L", ShelfNum = 1, Column = 2,
+            RoomId = roomId, CupboardId = cupboardId,
+        };
         var dst = _mapper.Map(src);
         Assert.NotNull(dst);
         Assert.Equal(src.Id, dst!.Id);
         Assert.Equal(src.LocationName, dst.LocationName);
+        Assert.Equal(src.ShelfNum, dst.ShelfNum);
+        Assert.Equal(src.Column, dst.Column);
+        Assert.Equal(src.RoomId, dst.RoomId);
+        Assert.Equal(src.CupboardId, dst.CupboardId);
     }
 
     [Fact]
     public void Map_Create_ShouldGenerateId()
     {
-        var create = new V1.CreateObjects.LocationCreate { LocationName = "L", ShelfNum = 1, Column = 2 };
+        var roomId = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
+        var create = new V1.CreateObjects.LocationCreate
+        {
+            LocationName = "L", ShelfNum = 1, Column = 2,
+            RoomId = roomId, CupboardId = cupboardId,
+        };
         var dst = _mapper.Map(create);
         Assert.NotEqual(Guid.Empty, dst.Id);
         Assert.Equal(create.LocationName, dst.LocationName);
         Assert.Equal(create.ShelfNum, dst.ShelfNum);
         Assert.Equal(create.Column, dst.Column);
+        Assert.Equal(create.RoomId, dst.RoomId);
+        Assert.Equal(create.CupboardId, dst.CupboardId);
     }
 }

@@ -73,8 +73,6 @@ builder.Services.AddScoped<IAppUOW, AppUOW>();
 builder.Services.AddScoped<IAppBLL, AppBLL>();
 builder.Services.AddScoped<WebApp.ApiControllers.Identity.IIpaAuthClient, WebApp.ApiControllers.Identity.IpaAuthClient>();
 
-builder.Services.AddRazorPages();
-
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 builder.Services
@@ -123,7 +121,10 @@ builder.Services
     );
 
 
-builder.Services.AddControllersWithViews();
+// Enums (e.g. AssetVisibility) cross the API as their names — "Normal", not 0 —
+// via [JsonStringEnumConverter] on the enum itself, so both directions agree.
+builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserNameResolver, UserNameResolver>();
 
@@ -206,7 +207,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 {
     await app.SeedRoles();
     // await app.SeedAdminUser();
-    await app.SeedSampleData();
+    await app.SeedBaseData();
 }
 
 // Behind the TLS-terminating reverse proxy the backend receives plain HTTP, so recover the
@@ -230,7 +231,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler();
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -272,20 +273,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
-app.MapControllerRoute(
-        name: "areas",
-        pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
-app.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
-app.MapRazorPages()
-    .WithStaticAssets();
+app.MapControllers();
 
 app.Run();
 

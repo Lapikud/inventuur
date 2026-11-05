@@ -34,8 +34,9 @@ export default function Rooms() {
 	const { data = [], error } = useRooms();
 	const crud = useEntityCrud<IRoom, IRoomAdd>({
 		service: roomService,
-		// overviewRoot embeds the joined roomName; cupboardsInRooms joins on roomId.
-		invalidateKeys: [qk.rooms(), qk.overviewRoot(), qk.cupboardsInRooms()],
+		// overviewRoot embeds the joined roomName; cupboards now reference
+		// rooms directly, so they go stale with it too.
+		invalidateKeys: [qk.rooms(), qk.cupboards(), qk.overviewRoot()],
 	});
 
 	const columns = [

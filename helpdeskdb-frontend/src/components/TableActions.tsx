@@ -29,6 +29,9 @@ interface ActionButtonProps {
 	className: string;
 	disabled?: boolean;
 	size?: ButtonSize;
+	// Only meaningful with href, e.g. "_blank" for opening the sticker preview
+	// in a new tab.
+	target?: string;
 }
 
 function ActionButton({
@@ -38,12 +41,13 @@ function ActionButton({
 	className,
 	disabled = false,
 	size = "md",
+	target,
 }: ActionButtonProps) {
 	const classes = `${btnBase} ${sizes[size]} ${className}`;
 
 	if (href) {
 		return (
-			<Link href={href} className={classes}>
+			<Link href={href} target={target} className={classes}>
 				{label}
 			</Link>
 		);
@@ -61,6 +65,7 @@ interface VariantProps {
 	label?: string;
 	disabled?: boolean;
 	size?: ButtonSize;
+	target?: string;
 }
 
 export function EditButton({ label = "Edit", ...rest }: VariantProps) {
@@ -68,7 +73,7 @@ export function EditButton({ label = "Edit", ...rest }: VariantProps) {
 		<ActionButton
 			{...rest}
 			label={label}
-			className="bg-[#e3f2fd] hover:bg-blue-100 text-[#50b3f1]"
+			className="bg-link-soft hover:bg-blue-100 text-link"
 		/>
 	);
 }
@@ -78,7 +83,7 @@ export function DeleteButton({ label = "Delete", ...rest }: VariantProps) {
 		<ActionButton
 			{...rest}
 			label={label}
-			className="bg-[#ffebee] hover:bg-red-100 text-[#ea6e6c]"
+			className="bg-danger-soft hover:bg-red-100 text-danger"
 		/>
 	);
 }
@@ -88,7 +93,7 @@ export function DetailsButton({ label = "Details", ...rest }: VariantProps) {
 		<ActionButton
 			{...rest}
 			label={label}
-			className="bg-[#eeeeee] hover:bg-gray-200 text-[#616161]"
+			className="bg-gray-100 hover:bg-gray-200 text-gray-600"
 		/>
 	);
 }
@@ -99,7 +104,7 @@ export function PrimaryButton({ label = "", ...rest }: VariantProps) {
 		<ActionButton
 			{...rest}
 			label={label}
-			className="bg-[#ff9800] hover:bg-[#f0941d] text-white"
+			className="bg-brand hover:bg-brand-hover text-white"
 		/>
 	);
 }

@@ -27,26 +27,33 @@ public class LocationRepositoryTest : IClassFixture<TestDatabaseFixture>
     }
 
     [Fact]
-    public async Task AllAsync_IncludesLocationsInCupboardsAndLocationAssets()
+    public async Task AllAsync_ReturnsLocationsWithRoomAndCupboardIds()
     {
-        var location = _context.Locations.First();
-        var asset = new Domain.Asset { Id = Guid.NewGuid(), AssetName = "Abcdefg", Comment = "comment" };
-        _context.Assets.Add(asset);
-        _context.LocationAssetsCollection.Add(new Domain.LocationAssets
+        var results = (await _repository.AllAsync()).ToList();
+
+        Assert.All(results, l =>
         {
-            Id = Guid.NewGuid(),
-            AssetId = asset.Id,
-            LocationId = location.Id,
+            Assert.NotEqual(Guid.Empty, l.RoomId);
+            Assert.NotNull(l.CupboardId);
         });
-        _context.SaveChanges();
-
-        var result = (await _repository.AllAsync())
-            .First(l => l.Id == location.Id);
-
-        Assert.NotNull(result.LocationsInCupboards);
-        Assert.NotEmpty(result.LocationsInCupboards!);
-        Assert.NotNull(result.LocationsAssetsCollection);
-        Assert.Single(result.LocationsAssetsCollection!);
+        var location1 = results.First(l => l.LocationName == "TestLocation1");
+        var location2 = results.First(l => l.LocationName == "TestLocation2");
+        Assert.Equal(
+            Guid.Parse("00000000-0000-0000-0000-000000000100"),
+            location1.RoomId
+        );
+        Assert.Equal(
+            Guid.Parse("00000000-0000-0000-0000-000000000200"),
+            location1.CupboardId
+        );
+        Assert.Equal(
+            Guid.Parse("00000000-0000-0000-0000-000000000101"),
+            location2.RoomId
+        );
+        Assert.Equal(
+            Guid.Parse("00000000-0000-0000-0000-000000000201"),
+            location2.CupboardId
+        );
     }
 
     private (AppDbContext, LocationRepository) SetupDependencies()

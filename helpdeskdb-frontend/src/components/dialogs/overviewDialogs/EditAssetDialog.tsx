@@ -8,7 +8,6 @@ import {
 	ICategory,
 	ICategoryAsset,
 	ILocation,
-	ILocationAsset,
 	IOwner,
 	IOwnerAsset,
 } from "@/types/domain/DomainTypes";
@@ -30,9 +29,8 @@ interface IEditAssetDialogProps {
 	comment: string;
 	categoryAssets: ICategoryAsset | null;
 	ownerAssets: IOwnerAsset | null;
-	locationAssets: ILocationAsset | null;
-	categories: ICategory[];
 	locations: ILocation[];
+	categories: ICategory[];
 	owners: IOwner[];
 	onClose: () => void;
 	onConfirm: (updateAsset: IAssetViewModelUpdate) => ConfirmResult;
@@ -45,9 +43,8 @@ export const EditAssetDialog = ({
 	comment,
 	categoryAssets,
 	ownerAssets,
-	locationAssets,
-	categories,
 	locations,
+	categories,
 	owners,
 	onClose,
 	onConfirm,
@@ -70,15 +67,9 @@ export const EditAssetDialog = ({
 	const initialValues = useMemo(
 		() =>
 			asset
-				? editAssetToForm(
-						asset,
-						comment,
-						categoryAssets,
-						ownerAssets,
-						locationAssets,
-					)
+				? editAssetToForm(asset, comment, categoryAssets, ownerAssets)
 				: null,
-		[asset, comment, categoryAssets, ownerAssets, locationAssets],
+		[asset, comment, categoryAssets, ownerAssets],
 	);
 
 	// The page owns the try/catch and hands the message back through
@@ -86,13 +77,7 @@ export const EditAssetDialog = ({
 	const handleConfirm = async (form: EditAssetForm) => {
 		if (!asset) return;
 		return onConfirm(
-			editAssetToUpdate(
-				form,
-				asset,
-				categoryAssets,
-				ownerAssets,
-				locationAssets,
-			),
+			editAssetToUpdate(form, asset, categoryAssets, ownerAssets),
 		);
 	};
 

@@ -5,9 +5,6 @@ import { AssetService } from "./AssetService";
 import { CategoryAssetsService } from "./CategoryAssetsService";
 import { CategoryService } from "./CategoryService";
 import { CupboardService } from "./CupboardService";
-import { CupboardsInRoomsService } from "./CupboardsInRoomsService";
-import { LocationAssetsService } from "./LocationAssetsService";
-import { LocationInCupboardService } from "./LocationInCupboardService";
 import { LocationService } from "./LocationService";
 import { OverviewService } from "./OverviewService";
 import { OwnerAssetsService } from "./OwnerAssetsService";
@@ -16,6 +13,7 @@ import { RefreshTokenService } from "./RefreshTokenService";
 import { RemovedAssetsService } from "./RemovedAssetsService";
 import { RoleService } from "./RoleService";
 import { RoomService } from "./RoomService";
+import { TagService } from "./TagService";
 import { UserManagementService } from "./UserManagementService";
 import { UserRoleService } from "./UserRoleService";
 import { UserService } from "./UserService";
@@ -41,9 +39,6 @@ export const assetService = new AssetService();
 export const categoryAssetsService = new CategoryAssetsService();
 export const categoryService = new CategoryService();
 export const cupboardService = new CupboardService();
-export const cupboardsInRoomsService = new CupboardsInRoomsService();
-export const locationAssetsService = new LocationAssetsService();
-export const locationInCupboardService = new LocationInCupboardService();
 export const locationService = new LocationService();
 export const overviewService = new OverviewService();
 export const ownerAssetsService = new OwnerAssetsService();
@@ -52,6 +47,7 @@ export const refreshTokenService = new RefreshTokenService();
 export const removedAssetsService = new RemovedAssetsService();
 export const roleService = new RoleService();
 export const roomService = new RoomService();
+export const tagService = new TagService();
 export const userManagementService = new UserManagementService();
 export const userRoleService = new UserRoleService();
 export const userService = new UserService();
@@ -64,9 +60,6 @@ export const allServices: BaseService[] = [
 	categoryAssetsService,
 	categoryService,
 	cupboardService,
-	cupboardsInRoomsService,
-	locationAssetsService,
-	locationInCupboardService,
 	locationService,
 	overviewService,
 	ownerAssetsService,
@@ -75,6 +68,7 @@ export const allServices: BaseService[] = [
 	removedAssetsService,
 	roleService,
 	roomService,
+	tagService,
 	userManagementService,
 	userRoleService,
 	userService,

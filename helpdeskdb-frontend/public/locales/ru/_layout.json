@@ -20,5 +20,8 @@
   "UserRoles": "Роли пользователя",
   "RefreshTokens": "Токены обновления",
   "UserManagement": "Управление пользователями",
-  "AssetReservations": "Бронирование имуществ"
+  "AssetReservations": "Бронирование имуществ",
+  "Tags": "Теги",
+  "FooterForkedFromPrefix": "Форк проекта ",
+  "FooterForkedFromSuffix": " от Mark Perman"
 }

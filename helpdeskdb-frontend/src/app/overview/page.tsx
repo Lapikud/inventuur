@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import { AccountContext } from "@/context/AccountContext";
-import { overviewService } from "@/services";
+import { assetService, overviewService } from "@/services";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useOverview } from "@/hooks/queries/overviewQueries";
@@ -11,7 +11,6 @@ import {
 	useAssetReservation,
 	useCategories,
 	useCategoryAssetByAsset,
-	useLocationAssetByAsset,
 	useLocations,
 	useOwnerAssetByAsset,
 	useOwners,
@@ -30,13 +29,14 @@ import {
 	IReserveAssetPayload,
 } from "@/types/domain/DomainTypes";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import AssetList from "@/components/AssetList";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { useDialogSelection } from "@/hooks/useDialogSelection";
 import { makeConfirmHandler } from "@/hooks/useEntityCrud";
 import { EditAssetDialog } from "@/components/dialogs/overviewDialogs/EditAssetDialog";
 import { RemoveAssetDialog } from "@/components/dialogs/overviewDialogs/RemoveAssetDialog";
-import Spinner from "@/components/LoadingSpinner";
+import { Skeleton } from "@/components/Skeleton";
 import { CreateAssetDialog } from "@/components/dialogs/overviewDialogs/CreateAssetDialog";
 import { ReserveAssetDialog } from "@/components/dialogs/overviewDialogs/ReserveAssetDialog";
 import { ChangeReservationTimeDialog } from "@/components/dialogs/overviewDialogs/ChangeReservationTimeDialog";
@@ -150,17 +150,15 @@ export default function Overview() {
 	const editAssetId = assetToUpdate?.id ?? null;
 	const editAssetQuery = useAsset(editAssetId);
 	const editCategoryAssetQuery = useCategoryAssetByAsset(editAssetId);
-	const editLocationAssetQuery = useLocationAssetByAsset(editAssetId);
 	const editOwnerAssetQuery = useOwnerAssetByAsset(editAssetId);
 	const editQueries = [
 		editAssetQuery,
 		editCategoryAssetQuery,
-		editLocationAssetQuery,
 		editOwnerAssetQuery,
 	];
 
 	// `isSuccess`, not `!isLoading`: a failed query is also "not loading", and
-	// opening the dialog then would hand it undefined data. Note the three
+	// opening the dialog then would hand it undefined data. Note the two
 	// mapping queries resolve to `null` when an asset has no mapping yet —
 	// still a success.
 	const editDataReady =
@@ -272,6 +270,33 @@ export default function Overview() {
 		},
 	});
 
+	// The inventory-app card actions. Each writes a field the overview view
+	// model embeds, so the overview list is what has to go stale.
+	const auditAsset = useMutation({
+		mutationFn: (assetId: string) =>
+			unwrap(assetService.auditAsync(assetId)),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: qk.overviewRoot() });
+		},
+	});
+
+	// A null slug asks the backend to auto-generate a random one.
+	const assignSlug = useMutation({
+		mutationFn: (assetId: string) =>
+			unwrap(assetService.updateSlugAsync(assetId, null)),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: qk.overviewRoot() });
+		},
+	});
+
+	const uploadPhoto = useMutation({
+		mutationFn: (data: { assetId: string; file: File }) =>
+			unwrap(assetService.uploadPhotoAsync(data.assetId, data.file)),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: qk.overviewRoot() });
+		},
+	});
+
 	// ---------------------------------------------------------------- search
 
 	const submitSearch = useCallback(
@@ -374,6 +399,40 @@ export default function Overview() {
 		}
 	};
 
+	// More row actions with no dialog to host the error. Like handleReturnAsset
+	// there is nothing inline to render it into, but these report through a
+	// toast instead of alert() and resolve to true/false so AssetList knows
+	// whether the photo cache-buster version should be bumped.
+	const handleAuditAsset = async (assetId: string) => {
+		try {
+			await auditAsset.mutateAsync(assetId);
+			return true;
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+			return false;
+		}
+	};
+
+	const handleAssignSlug = async (assetId: string) => {
+		try {
+			await assignSlug.mutateAsync(assetId);
+			return true;
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+			return false;
+		}
+	};
+
+	const handleUploadPhoto = async (assetId: string, file: File) => {
+		try {
+			await uploadPhoto.mutateAsync({ assetId, file });
+			return true;
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+			return false;
+		}
+	};
+
 	// --------------------------------------------------------- render state
 
 	// AssetList disables a row's actions while anything concerning that asset
@@ -398,6 +457,9 @@ export default function Overview() {
 	if (changeReservationTime.isPending) {
 		markLoading(changeReservationTime.variables?.assetId);
 	}
+	if (auditAsset.isPending) markLoading(auditAsset.variables);
+	if (assignSlug.isPending) markLoading(assignSlug.variables);
+	if (uploadPhoto.isPending) markLoading(uploadPhoto.variables?.assetId);
 
 	const loadFailed =
 		overview.isError ||
@@ -412,12 +474,31 @@ export default function Overview() {
 	// True only before the very first result: `keepPreviousData` keeps the old
 	// list on screen while a new search term loads.
 	if (overview.isLoading) {
-		return <Spinner className="h-64" />;
+		// The first fetch has no cached list to keep on screen, so the page
+		// renders its own shape in skeleton form: heading, filter bar, rows.
+		return (
+			<div className="min-h-screen bg-surface -mx-3 sm:-mx-4 px-6 sm:px-14 py-8 text-left">
+				<Skeleton className="h-9 w-72 mb-6" />
+				<Skeleton className="h-14 w-full mb-4 rounded-lg" />
+				<div className="bg-white border border-gray-100 rounded-lg shadow-card divide-y divide-gray-100">
+					{Array.from({ length: 9 }).map((_, i) => (
+						<div key={i} className="flex items-center gap-4 px-3 py-3">
+							<Skeleton className="h-5 w-12" />
+							<Skeleton className="h-5 flex-1" />
+							<Skeleton className="h-5 w-24 max-sm:hidden" />
+							<Skeleton className="h-5 w-24 max-sm:hidden" />
+							<Skeleton className="h-5 w-28" />
+							<Skeleton className="h-5 w-36" />
+						</div>
+					))}
+				</div>
+			</div>
+		);
 	}
 
 	return (
-		<div className="min-h-screen bg-[#efefef] -mx-3 sm:-mx-4 px-6 sm:px-14 py-8 text-left">
-			<h1 className="text-3xl font-bold text-[#424242] mb-6">
+		<div className="min-h-screen bg-surface -mx-3 sm:-mx-4 px-6 sm:px-14 py-8 text-left">
+			<h1 className="text-3xl font-bold text-ink mb-6">
 				{tAssetViewModel("AssetsOverview")}
 			</h1>
 			{loadFailed && (
@@ -457,6 +538,9 @@ export default function Overview() {
 					selectReservationToChange(reservationId);
 				}}
 				onReturnAsset={handleReturnAsset}
+				onAuditAsset={handleAuditAsset}
+				onAssignSlug={handleAssignSlug}
+				onUploadPhoto={handleUploadPhoto}
 				onRemoveReservation={async (id: string) => {
 					if (id === assetIdToFreeUp) {
 						refetchErrored([freeUpReservationQuery]);
@@ -479,10 +563,9 @@ export default function Overview() {
 				comment={editAssetQuery.data?.comment ?? ""}
 				categoryAssets={editCategoryAssetQuery.data ?? null}
 				ownerAssets={editOwnerAssetQuery.data ?? null}
-				locationAssets={editLocationAssetQuery.data ?? null}
+				locations={locations}
 				categories={categories}
 				owners={owners}
-				locations={locations}
 				onClose={clearAssetToUpdate}
 				onConfirm={handleEdit}
 				isLoading={updateAsset.isPending}

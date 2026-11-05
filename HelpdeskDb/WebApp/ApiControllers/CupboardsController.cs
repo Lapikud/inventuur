@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using App.DAL.EF;
+using App.DTO.v1;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -140,16 +141,13 @@ namespace WebApp.ApiControllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteCupboard(Guid id)
         {
-            var cupboardInRooms = (await _bll.CupboardInRoomService.AllAsync()).Where(ca => ca.CupboardId == id).ToList();
-            var locationsInCupboards = (await _bll.LocationInCupboardService.AllAsync()).Where(ca => ca.CupboardId == id).ToList();
-            foreach (var cir in cupboardInRooms)
+            var hasLocations = (await _bll.LocationService.AllAsync())
+                .Any(l => l.CupboardId == id);
+            if (hasLocations)
             {
-                await _bll.CupboardInRoomService.RemoveAsync(cir.Id);
+                return BadRequest(new Message("Cupboard still has locations; remove or move them first."));
             }
-            foreach (var lic in locationsInCupboards)
-            {
-                await _bll.LocationInCupboardService.RemoveAsync(lic.Id);
-            }
+
             await _bll.CupboardService.RemoveAsync(id);
             await _bll.SaveChangesAsync();
 

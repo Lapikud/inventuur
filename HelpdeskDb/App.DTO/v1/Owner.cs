@@ -33,4 +33,11 @@ public class Owner : IDomainId
     [Required(ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.Required),
         ErrorMessageResourceType = typeof(Base.Resources.Errors.ValidationErrors))]
     public string Comment { get; set; } = default!;
+
+    /// <summary>
+    /// First name of the user matching this owner row, resolved at read time;
+    /// null for organization owners (e.g. the seeded "Lapikud") when the IPA
+    /// account has no first name.
+    /// </summary>
+    public string? DisplayName { get; set; }
 }

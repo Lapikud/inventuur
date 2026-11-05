@@ -43,12 +43,6 @@ public class AppBLL : BaseBLL<IAppUOW>, IAppBLL
             new CupboardBLLMapper()
         );
     
-    private ICupboardInRoomService? _cupboardInRoomService;
-    public ICupboardInRoomService CupboardInRoomService =>
-        _cupboardInRoomService ??= new CupboardInRoomService(
-            BLLUOW,
-            new CupboardInRoomBLLMapper()
-        );
     
     private ILocationService? _locationService;
     public ILocationService LocationService =>
@@ -57,19 +51,7 @@ public class AppBLL : BaseBLL<IAppUOW>, IAppBLL
             new LocationBLLMapper()
         );
     
-    private ILocationAssetsService? _locationAssetsService;
-    public ILocationAssetsService LocationAssetsService =>
-        _locationAssetsService ??= new LocationAssetsService(
-            BLLUOW,
-            new LocationAssetsBLLMapper()
-        );
     
-    private ILocationInCupboardService? _locationInCupboardService;
-    public ILocationInCupboardService LocationInCupboardService =>
-        _locationInCupboardService ??= new LocationInCupboardService(
-            BLLUOW,
-            new LocationInCupboardBLLMapper()
-        );
     
     private IOwnerService? _ownerService;
     public IOwnerService OwnerService =>
@@ -111,5 +93,26 @@ public class AppBLL : BaseBLL<IAppUOW>, IAppBLL
         _assetReservationService ??= new AssetReservationService(
             BLLUOW,
             new AssetReservationBLLMapper()
+        );
+
+    private ITagService? _tagService;
+    public ITagService TagService =>
+        _tagService ??= new TagService(
+            BLLUOW,
+            new TagBLLMapper()
+        );
+
+    private IAssetTagService? _assetTagService;
+    public IAssetTagService AssetTagService =>
+        _assetTagService ??= new AssetTagService(
+            BLLUOW,
+            new AssetTagBLLMapper()
+        );
+
+    private IAssetPhotoService? _assetPhotoService;
+    public IAssetPhotoService AssetPhotoService =>
+        _assetPhotoService ??= new AssetPhotoService(
+            BLLUOW,
+            new AssetPhotoBLLMapper()
         );
 }

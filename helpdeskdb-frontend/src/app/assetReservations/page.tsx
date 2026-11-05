@@ -104,7 +104,7 @@ export default function AssetReservations() {
 		}
 		if (new Date(item.reservationTo) < new Date()) {
 			return (
-				<span className="text-sm font-medium text-[#c50000]">
+				<span className="text-sm font-medium text-red-700">
 					{tAssetReservation("Expired")}
 				</span>
 			);

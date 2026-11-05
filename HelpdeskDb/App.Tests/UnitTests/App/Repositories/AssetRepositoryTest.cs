@@ -32,8 +32,8 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         Assert.Equal(assetVm.Id, asset.Id);
         Assert.Equal(assetVm.AssetName, asset.AssetName);
         Assert.InRange(assetVm.AddedAt,
-            asset.LocationsAssetsCollection!.First().CreatedAt - TimeSpan.FromSeconds(10),
-            asset.LocationsAssetsCollection!.First().CreatedAt + TimeSpan.FromSeconds(10)
+            asset.Location!.CreatedAt - TimeSpan.FromSeconds(10),
+            asset.Location!.CreatedAt + TimeSpan.FromSeconds(10)
         );
         Assert.Equal(
             assetVm.CategoryName,
@@ -46,24 +46,19 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         );
         Assert.Equal(
             assetVm.CupboardName,
-            asset.LocationsAssetsCollection!.First()
-                .Location!.LocationsInCupboards!.First()
-                .Cupboard!.CodeName
+            asset.Location!.Cupboard!.CodeName
         );
         Assert.Equal(
             assetVm.RoomName,
-            asset.LocationsAssetsCollection!.First()
-                .Location!.LocationsInCupboards!.First()
-                .Cupboard!.CupboardsInRooms!.First()
-                .Room!.RoomName
+            asset.Location!.Room!.RoomName
         );
         Assert.Equal(
             assetVm.ShelfNum,
-            asset.LocationsAssetsCollection!.First().Location!.ShelfNum
+            asset.Location!.ShelfNum
         );
         Assert.Equal(
             assetVm.Column,
-            asset.LocationsAssetsCollection!.First().Location!.Column
+            asset.Location!.Column
         );
     }
 
@@ -73,23 +68,23 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         // Arrange
         CreateAssetWithRemovedAssets();
         var assetWithoutReservation = CreateAssetWithCategoryLocationAndOwner();
-        
+
         // Act
         var availableAssets = await _repository.GetAvailableAssets();
         var assetWithoutRemovedAssetsVm = await _repository.GetAssetVmByAssetId(assetWithoutReservation.Id);
         var assetWithoutRemovedAssetsFromRepository = await _repository.FindAsync(assetWithoutReservation.Id);
-        
+
         // Assert
         Assert.Equal(2, _context.Assets.Count());
         Assert.NotEmpty(availableAssets);
         Assert.Single(availableAssets);
         var notRemovedAssetWithoutReservation = availableAssets.First();
-        
+
         Assert.NotNull(assetWithoutRemovedAssetsFromRepository);
-        
+
         Assert.Equal(assetWithoutRemovedAssetsFromRepository.Id, notRemovedAssetWithoutReservation.Id);
         Assert.Equal(assetWithoutRemovedAssetsFromRepository.AssetName, notRemovedAssetWithoutReservation.AssetName);
-        
+
         Assert.NotNull(assetWithoutRemovedAssetsVm);
         Assert.Equal(assetWithoutRemovedAssetsVm.Id, notRemovedAssetWithoutReservation.Id);
         Assert.Equal(assetWithoutRemovedAssetsVm.AssetName, notRemovedAssetWithoutReservation.AssetName);
@@ -126,7 +121,7 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         Assert.False(notRemovedAssetWithoutReservation.Reserved);
         Assert.Equal(assetWithoutRemovedAssetsVm.Reserved, notRemovedAssetWithoutReservation.Reserved);
     }
-    
+
     [Fact]
     public async Task GetAssetsReservedByUser_ShouldReturnAllAssetsReservedByUser()
     {
@@ -134,7 +129,7 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         var assetWithAssetReservation = CreateAssetWithAssetReservation();
         CreateAssetWithRemovedAssets();
         CreateAssetWithCategoryLocationAndOwner();
-        
+
         // Act
         var assetsReservedByUser = await _repository.GetAssetsReservedByUser(_context.Users.First().Id);
         var assetWithAssetReservationVm = await _repository.GetAssetVmByAssetId(assetWithAssetReservation.Id);
@@ -145,12 +140,12 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         Assert.NotEmpty(assetsReservedByUser);
         Assert.Single(assetsReservedByUser);
         var reservedAsset = assetsReservedByUser.First();
-        
+
         Assert.NotNull(assetWithAssetReservationFromRepository);
-        
+
         Assert.Equal(assetWithAssetReservationFromRepository.Id, reservedAsset.Id);
         Assert.Equal(assetWithAssetReservationFromRepository.AssetName, reservedAsset.AssetName);
-        
+
         Assert.NotNull(assetWithAssetReservationVm);
         Assert.Equal(assetWithAssetReservationVm.Id, reservedAsset.Id);
         Assert.Equal(assetWithAssetReservationVm.AssetName, reservedAsset.AssetName);
@@ -201,7 +196,7 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
             reservedAsset.ReservationTo
         );
     }
-    
+
     [Fact]
     public async Task AllAsync_ShouldReturnAllAssetsWithCollections()
     {
@@ -219,13 +214,12 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         Assert.Equal(asset.Comment, assetFromRepository.Comment);
 
         Assert.NotNull(assetFromRepository.CategoryAssetsCollection);
-        Assert.NotNull(assetFromRepository.LocationsAssetsCollection);
+        Assert.NotNull(assetFromRepository.Location);
         Assert.NotNull(assetFromRepository.OwnerAssets);
         Assert.NotNull(assetFromRepository.RemovedAssetsCollection);
         Assert.NotNull(assetFromRepository.AssetReservations);
 
         Assert.NotEmpty(assetFromRepository.CategoryAssetsCollection);
-        Assert.NotEmpty(assetFromRepository.LocationsAssetsCollection);
         Assert.NotEmpty(assetFromRepository.OwnerAssets);
         Assert.Empty(assetFromRepository.RemovedAssetsCollection);
         Assert.Empty(assetFromRepository.AssetReservations);
@@ -236,8 +230,12 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
         );
 
         Assert.Equal(
-            asset.LocationsAssetsCollection!.First().LocationId,
-            assetFromRepository.LocationsAssetsCollection.First().LocationId
+            asset.LocationId,
+            assetFromRepository.LocationId
+        );
+        Assert.Equal(
+            asset.Location!.Id,
+            assetFromRepository.Location!.Id
         );
 
         Assert.Equal(
@@ -267,10 +265,8 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
 
         var category = _context.Categories.First();
         var location = _context.Locations
-            .Include(l => l.LocationsInCupboards)!// Load LocationInCupboard
-            .ThenInclude(lc => lc.Cupboard) // Load Cupboard
-            .ThenInclude(c => c!.CupboardsInRooms)! // Load CupboardInRoom
-            .ThenInclude(cr => cr.Room) // Load Room
+            .Include(l => l.Room)
+            .Include(l => l.Cupboard)
             .First(l => l.LocationName == "TestLocation2");
         var owner = _context.Owners.First();
 
@@ -280,30 +276,24 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
             CategoryId = category.Id,
             Category = category,
         };
-        var locationAsset = new Domain.LocationAssets()
-        {
-            AssetId = asset.Id,
-            LocationId = location.Id,
-            Location = location,
-        };
         var ownerAsset = new Domain.OwnerAssets()
         {
             AssetId = asset.Id,
             OwnerId = owner.Id,
             Owner = owner,
         };
+        asset.LocationId = location.Id;
 
         _context.Assets.Add(asset);
         _context.CategoryAssetsCollection.Add(categoryAsset);
-        _context.LocationAssetsCollection.Add(locationAsset);
         _context.OwnerAssets.Add(ownerAsset);
         _context.SaveChanges();
 
+        // EF fixup wires the loaded navigations to the tracked asset
         asset.CategoryAssetsCollection = new List<Domain.CategoryAssets>();
         asset.CategoryAssetsCollection.Add(categoryAsset);
 
-        asset.LocationsAssetsCollection = new List<Domain.LocationAssets>();
-        asset.LocationsAssetsCollection.Add(locationAsset);
+        asset.Location = location;
 
         asset.OwnerAssets = new List<Domain.OwnerAssets>();
         asset.OwnerAssets.Add(ownerAsset);
@@ -322,13 +312,13 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
             ReservationFrom = DateTime.UtcNow,
             ReservationTo = DateTime.UtcNow.AddHours(1),
         };
-        
+
         asset.AssetReservations = new List<Domain.AssetReservation>();
         asset.AssetReservations.Add(userAsset);
 
         return asset;
     }
-    
+
     private Domain.Asset CreateAssetWithRemovedAssets()
     {
         var asset = CreateAssetWithCategoryLocationAndOwner();
@@ -338,7 +328,7 @@ public class AssetRepositoryTest : IClassFixture<TestDatabaseFixture>
             AssetId = asset.Id,
             Comment = "Test Remove"
         };
-        
+
         asset.RemovedAssetsCollection = new List<Domain.RemovedAssets>();
         asset.RemovedAssetsCollection.Add(removedAsset);
 

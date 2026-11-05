@@ -13,13 +13,10 @@ public interface IAppUOW : IBaseUOW
     
     ICupboardRepository CupboardRepository { get; }
     
-    ICupboardInRoomRepository CupboardInRoomRepository { get; }
     
     ILocationRepository LocationRepository { get; }
     
-    ILocationAssetsRepository LocationAssetsRepository { get; }
     
-    ILocationInCupboardRepository LocationInCupboardRepository { get; }
     
     IOwnerRepository OwnerRepository { get; }
     
@@ -32,4 +29,10 @@ public interface IAppUOW : IBaseUOW
     IAppUserRoleRepository AppUserRoleRepository { get; }
     
     IAssetReservationRepository AssetReservationRepository { get; }
+
+    ITagRepository TagRepository { get; }
+
+    IAssetTagRepository AssetTagRepository { get; }
+
+    IAssetPhotoRepository AssetPhotoRepository { get; }
 }

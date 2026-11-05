@@ -162,6 +162,7 @@ public class AccountController : ControllerBase
                 {
                     Id = user.Id,
                     Username = user.Username!,
+                    DisplayName = user.DisplayName,
                     Roles = roleNames
                 });
             }
@@ -389,6 +390,7 @@ public class AccountController : ControllerBase
         {
             Id = appUser.Id,
             Username = appUser.Username!,
+            DisplayName = appUser.DisplayName,
             Roles = roleNames
         });
     }
@@ -416,6 +418,7 @@ public class AccountController : ControllerBase
         {
             Id = appUser.Id,
             Username = appUser.Username!,
+            DisplayName = appUser.DisplayName,
             Roles = roleNames
         });
     }
@@ -434,11 +437,27 @@ public class AccountController : ControllerBase
             return false;
         }
 
-        var saLogin = await _ipaClient.LoginWithPassword(new IpaLoginRequestModel
+        // The client throws on non-2xx (e.g. wrong service account credentials)
+        // rather than returning a failed result — catch it so a misconfigured
+        // service account degrades to "sync skipped" instead of failing the
+        // user's already-successful login.
+        IpaResultModel<IpaLoginResponseModel> saLogin;
+        try
         {
-            Username = saUser,
-            Password = saPass
-        });
+            saLogin = await _ipaClient.LoginWithPassword(new IpaLoginRequestModel
+            {
+                Username = saUser,
+                Password = saPass
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "IPA service account login threw; skipping role sync for {Username}. " +
+                "Check IpaServiceAccount__* configuration.",
+                user.Username);
+            return false;
+        }
         if (!saLogin.Success)
         {
             _logger.LogWarning("IPA service account login failed; skipping role sync for {Username}: {Message}",
@@ -473,11 +492,55 @@ public class AccountController : ControllerBase
         }
 
         var doc = JsonDocument.Parse(rpcResult.Data!.Result!.ToString()!);
-        var ipaGroups = doc.RootElement
-            .GetProperty("result")
+        var result = doc.RootElement.GetProperty("result");
+
+        // First name off the same user_show payload — shown in the UI instead
+        // of the username when present. Depends on the caller's SaveChanges, so
+        // it persists even when the role reconcile below is a no-op.
+        string? firstName = null;
+        var hasGivenName = result.TryGetProperty("givenname", out var givenName);
+        if (hasGivenName)
+        {
+            // FreeIPA wraps multi-valued attributes in arrays, but single-valued
+            // ones may arrive as plain strings depending on the RPC — accept both.
+            if (givenName.ValueKind == JsonValueKind.Array && givenName.GetArrayLength() > 0)
+            {
+                firstName = givenName[0].GetString();
+            }
+            else if (givenName.ValueKind == JsonValueKind.String)
+            {
+                firstName = givenName.GetString();
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(firstName) &&
+            !string.Equals(firstName, user.DisplayName, StringComparison.Ordinal))
+        {
+            user.DisplayName = firstName;
+            // The app's DbContext runs with NoTrackingWithIdentityResolution,
+            // so `user` came back DETACHED — a bare property assignment never
+            // reaches the database. Attach and mark the single property
+            // modified so the caller's SaveChanges issues a 1-column UPDATE.
+            if (_context.Entry(user).State == EntityState.Detached)
+            {
+                _context.Attach(user);
+            }
+            _context.Entry(user).Property(u => u.DisplayName).IsModified = true;
+        }
+
+        var ipaGroups = result
             .GetProperty("memberof_group")
             .EnumerateArray()
             .Select(e => e.GetString()!)
+            .ToList();
+
+        // IPA groups rarely carry the app's role names verbatim. The Auth:GroupAliases
+        // map (env: Auth__GroupAliases__<group>=<role>) translates an org's real groups
+        // onto the roles this app knows before the allowlist filter runs, e.g.
+        // all_server_admins -> admins.
+        var aliases = _configuration.GetSection("Auth:GroupAliases")
+            .Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+        var roleSource = ipaGroups
+            .Select(g => aliases.TryGetValue(g, out var mapped) ? mapped : g)
             .Where(g => g is "admins" or "members" or "pixels" or "helpdesk_db_admins")
             .ToHashSet();
 
@@ -488,16 +551,16 @@ public class AccountController : ControllerBase
             .ToListAsync();
         var currentRoleNames = currentRoles.Select(x => x.RoleName).ToHashSet();
 
-        if (currentRoleNames.SetEquals(ipaGroups))
+        if (currentRoleNames.SetEquals(roleSource))
         {
             return false;
         }
 
-        foreach (var entry in currentRoles.Where(x => !ipaGroups.Contains(x.RoleName)))
+        foreach (var entry in currentRoles.Where(x => !roleSource.Contains(x.RoleName)))
         {
             _context.UserRoles.Remove(entry.Ur);
         }
-        foreach (var group in ipaGroups.Where(g => !currentRoleNames.Contains(g)))
+        foreach (var group in roleSource.Where(g => !currentRoleNames.Contains(g)))
         {
             var role = await _context.Roles.FirstAsync(r => r.Name == group);
             await _context.UserRoles.AddAsync(new AppUserRole

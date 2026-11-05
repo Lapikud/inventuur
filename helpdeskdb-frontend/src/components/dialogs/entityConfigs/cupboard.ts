@@ -7,7 +7,7 @@ import {
 export const cupboardFormConfig: FormDialogConfig<ICupboardAdd> = {
 	namespace: "cupboard",
 	singularKey: "CupboardSingular",
-	defaultValues: { codeName: "" },
+	defaultValues: { codeName: "", roomId: "" },
 	fields: [
 		{
 			kind: "text",
@@ -16,11 +16,19 @@ export const cupboardFormConfig: FormDialogConfig<ICupboardAdd> = {
 			placeholderKey: "CodeNamePrompt",
 			validation: { required: true, minLength: 2, maxLength: 128 },
 		},
+		{
+			kind: "select",
+			name: "roomId",
+			labelKey: "assetviewmodel:RoomName",
+			optionsKey: "rooms",
+			required: true,
+		},
 	],
 };
 
 export const cupboardToForm = (cupboard: ICupboard): ICupboardAdd => ({
 	codeName: cupboard.codeName,
+	roomId: cupboard.roomId,
 });
 
 export const cupboardDeleteSummary: DeleteSummaryField<ICupboard>[] = [

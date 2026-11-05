@@ -51,9 +51,7 @@ public class AssetViewModelUpdate
     [Display(Name = nameof(App.Resources.Domain.Owner.OwnerSingular),
         ResourceType = typeof(App.Resources.Domain.Owner))]
     public Guid SelectedOwnerId { get; set; }
-    
-    public Guid? LocationAssetsId { get; set; }
-    
+
     [Display(Name = nameof(App.Resources.Domain.Location.LocationSingular),
         ResourceType = typeof(App.Resources.Domain.Location))]
     public Guid SelectedLocationId { get; set; }

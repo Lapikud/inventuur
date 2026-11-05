@@ -21,9 +21,9 @@ public class AssetService : BaseService<App.BLL.DTO.Asset, App.DAL.DTO.Asset, Ap
     {
     }
 
-    public virtual async Task<App.BLL.DTO.Asset> CreateNewAsset(string assetName, string comment, string? serialNumber = null, string? barcode = null)
+    public virtual async Task<App.BLL.DTO.Asset> CreateNewAsset(string assetName, string comment, string? serialNumber = null, string? barcode = null, Guid? locationId = null)
     {
-        var asset = await ServiceRepository.CreateNewAsset(assetName, comment, serialNumber, barcode);
+        var asset = await ServiceRepository.CreateNewAsset(assetName, comment, serialNumber, barcode, locationId);
         return Mapper.Map(asset)!;
     }
     
@@ -41,6 +41,13 @@ public class AssetService : BaseService<App.BLL.DTO.Asset, App.DAL.DTO.Asset, Ap
         return mapped;
     }
 
+    public async Task<List<Asset>> GetAllNotRemovedAssets()
+    {
+        var notRemoved = await ServiceRepository.GetAllNotRemovedAssets();
+        var mapped = notRemoved.Select(x => Mapper.Map(x)!).ToList();
+        return mapped;
+    }
+
     public async Task<AssetViewModel?> GetAssetVmByAssetId(Guid assetId)
     {
         var assetVm = await ServiceRepository.GetAssetVmByAssetId(assetId);
@@ -48,10 +55,20 @@ public class AssetService : BaseService<App.BLL.DTO.Asset, App.DAL.DTO.Asset, Ap
         return mapped;
     }
 
-    public async Task<List<Asset>> GetAllNotRemovedAssets()
+    public async Task<Asset?> AuditAssetAsync(Guid assetId, string userName)
     {
-        var notRemoved = await ServiceRepository.GetAllNotRemovedAssets();
-        var mapped = notRemoved.Select(x => Mapper.Map(x)!).ToList();
-        return mapped;
+        var audited = await ServiceRepository.AuditAssetAsync(assetId, userName);
+        return audited == null ? null : Mapper.Map(audited);
+    }
+
+    public async Task<Asset?> FindBySlugAsync(string slug)
+    {
+        var asset = await ServiceRepository.FindBySlugAsync(slug);
+        return asset == null ? null : Mapper.Map(asset);
+    }
+
+    public async Task<bool> IsSlugFreeAsync(string slug)
+    {
+        return await ServiceRepository.IsSlugFreeAsync(slug);
     }
 }

@@ -14,5 +14,12 @@
   "Category": "Kategooria",
   "Location": "Asukoht",
   "Owner": "Omanik",
-  "SerialNumber": "Seerianumber"
+  "SerialNumber": "Seerianumber",
+  "LastAudited": "Viimati kontrollitud",
+  "PublicAssetNotFound": "Vara ei leitud või pole avalikult nähtav.",
+  "PublicInventory": "Inventar",
+  "LoginForDetails": "Asukoha, omandi ja kommentaaride nägemiseks logi sisse.",
+  "PublicInventoryEmpty": "Hetkel pole näidata ühtegi vara.",
+  "InUse": "Kasutuses",
+  "DetailsLoginFor": "Rohkem infot pärast sisselogimist"
 }

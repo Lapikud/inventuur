@@ -14,5 +14,12 @@
   "Category": "Category",
   "Owner": "Owner",
   "Location": "Location",
-  "SerialNumber": "Serial Number"
+  "SerialNumber": "Serial Number",
+  "LastAudited": "Last audited",
+  "PublicAssetNotFound": "Asset not found or not publicly visible.",
+  "PublicInventory": "Inventory",
+  "LoginForDetails": "Log in to see location, ownership and comments.",
+  "PublicInventoryEmpty": "No assets to show yet.",
+  "InUse": "In use",
+  "DetailsLoginFor": "Log in to see more"
 }

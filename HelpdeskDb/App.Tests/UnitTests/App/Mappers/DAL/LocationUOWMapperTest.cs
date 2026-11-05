@@ -14,20 +14,15 @@ public class LocationUOWMapperTest
     public void Map_DalToDomain_NullReturnsNull() => Assert.Null(_mapper.Map((DalDto.Location?)null));
 
     [Fact]
-    public void Map_DomainToDal_ShouldCopyScalarsAndCollections()
+    public void Map_DomainToDal_ShouldCopyScalarsAndFks()
     {
         var id = Guid.NewGuid();
+        var roomId = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
         var src = new Domain.Location
         {
             Id = id, LocationName = "Location", ShelfNum = 3, Column = 5,
-            LocationsInCupboards = new List<Domain.LocationInCupboard>
-            {
-                new() { Id = Guid.NewGuid(), LocationId = id, CupboardId = Guid.NewGuid() }
-            },
-            LocationsAssetsCollection = new List<Domain.LocationAssets>
-            {
-                new() { Id = Guid.NewGuid(), LocationId = id, AssetId = Guid.NewGuid(), CreatedBy = "user" }
-            }
+            RoomId = roomId, CupboardId = cupboardId,
         };
 
         var dst = _mapper.Map(src);
@@ -37,27 +32,22 @@ public class LocationUOWMapperTest
         Assert.Equal(src.LocationName, dst.LocationName);
         Assert.Equal(src.ShelfNum, dst.ShelfNum);
         Assert.Equal(src.Column, dst.Column);
-        Assert.Single(dst.LocationsInCupboards!);
-        Assert.Single(dst.LocationsAssetsCollection!);
-        Assert.All(dst.LocationsInCupboards!, x => { Assert.Null(x.Location); Assert.Null(x.Cupboard); });
-        Assert.All(dst.LocationsAssetsCollection!, x => { Assert.Null(x.Asset); Assert.Null(x.Location); });
+        Assert.Equal(src.RoomId, dst.RoomId);
+        Assert.Equal(src.CupboardId, dst.CupboardId);
+        Assert.Null(dst.Room);
+        Assert.Null(dst.Cupboard);
     }
 
     [Fact]
-    public void Map_DalToDomain_ShouldCopyScalarsAndCollections()
+    public void Map_DalToDomain_ShouldCopyScalarsAndFks()
     {
         var id = Guid.NewGuid();
+        var roomId = Guid.NewGuid();
+        var cupboardId = Guid.NewGuid();
         var src = new DalDto.Location
         {
             Id = id, LocationName = "Location", ShelfNum = 3, Column = 5,
-            LocationsInCupboards = new List<DalDto.LocationInCupboard>
-            {
-                new() { Id = Guid.NewGuid(), LocationId = id, CupboardId = Guid.NewGuid() }
-            },
-            LocationsAssetsCollection = new List<DalDto.LocationAssets>
-            {
-                new() { Id = Guid.NewGuid(), LocationId = id, AssetId = Guid.NewGuid(), CreatedBy = "user" }
-            }
+            RoomId = roomId, CupboardId = cupboardId,
         };
 
         var dst = _mapper.Map(src);
@@ -67,7 +57,9 @@ public class LocationUOWMapperTest
         Assert.Equal(src.LocationName, dst.LocationName);
         Assert.Equal(src.ShelfNum, dst.ShelfNum);
         Assert.Equal(src.Column, dst.Column);
-        Assert.Single(dst.LocationsInCupboards!);
-        Assert.Single(dst.LocationsAssetsCollection!);
+        Assert.Equal(src.RoomId, dst.RoomId);
+        Assert.Equal(src.CupboardId, dst.CupboardId);
+        Assert.Null(dst.Room);
+        Assert.Null(dst.Cupboard);
     }
 }

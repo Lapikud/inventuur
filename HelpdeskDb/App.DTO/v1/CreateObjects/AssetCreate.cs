@@ -44,4 +44,11 @@ public class AssetCreate
     [Display(Name = nameof(App.Resources.Domain.Asset.Barcode),
         ResourceType = typeof(App.Resources.Domain.Asset))]
     public string? Barcode { get; set; }
+
+    [MaxLength(16,
+        ErrorMessageResourceName = nameof(ValidationErrors.MaxLengthValidationError),
+        ErrorMessageResourceType = typeof(ValidationErrors))]
+    public string? Slug { get; set; }
+
+    public App.Domain.AssetVisibility Visibility { get; set; } = App.Domain.AssetVisibility.Normal;
 }

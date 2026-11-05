@@ -20,5 +20,8 @@
   "UserRoles": "User roles",
   "RefreshTokens": "Refresh tokens",
   "UserManagement": "User management",
-  "AssetReservations": "Asset reservations"
+  "AssetReservations": "Asset reservations",
+  "Tags": "Tags",
+  "FooterForkedFromPrefix": "Forked from ",
+  "FooterForkedFromSuffix": " by Mark Perman"
 }

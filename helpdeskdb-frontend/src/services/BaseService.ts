@@ -19,18 +19,20 @@ export abstract class BaseService {
 	}
 
 	/**
-	 * Drops the local identity and sends the user to /login. Called from every path
-	 * where the session has proven unrecoverable — a failed refresh, a refresh that
-	 * returned no identity, and a replayed request that 401'd again. Each of those
-	 * used to reject silently, stranding the UI on a page that looked signed in.
+	 * Drops the local identity and sends the user to the public main page.
+	 * Called from every path where the session has proven unrecoverable — a
+	 * failed refresh, a refresh that returned no identity, and a replayed
+	 * request that 401'd again. Each of those used to reject silently,
+	 * stranding the UI on a page that looked signed in. The public page (not
+	 * /login — no auto-redirect to the form) keeps the visitor browsing.
 	 */
 	private endSession() {
 		this.setAccountInfo?.({});
 		if (
 			typeof window !== "undefined" &&
-			!window.location.pathname.startsWith("/login")
+			window.location.pathname !== "/"
 		) {
-			window.location.href = "/login";
+			window.location.href = "/";
 		}
 	}
 
@@ -80,7 +82,7 @@ export abstract class BaseService {
 						if (identity) {
 							this.setAccountInfo?.({
 								id: identity.id,
-								name: identity.username,
+								name: identity.displayName || identity.username,
 								roles: identity.roles,
 							});
 							return this.axiosInstance(originalRequest);

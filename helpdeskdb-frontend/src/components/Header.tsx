@@ -2,11 +2,18 @@
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { AccountContext } from "../context/AccountContext";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useContext, useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Syncopate } from "next/font/google";
 import { accountService } from "@/services";
 import { usePermissions } from "@/hooks/usePermissions";
+
+// Lapikud brand typeface, self-hosted by next/font at build time.
+const syncopate = Syncopate({
+	weight: ["400", "700"],
+	subsets: ["latin"],
+});
 
 export default function Header() {
 	const { t: tLayout } = useTranslation("_layout");
@@ -15,6 +22,25 @@ export default function Header() {
 
 	const { accountInfo, setAccountInfo } = useContext(AccountContext);
 	const router = useRouter();
+	// Active-nav state: match the first path segment (trailingSlash is on, and
+	// AuthGuard already established the lowercase-first-segment convention).
+	const pathname = usePathname() || "/";
+	const activeSegment = pathname.split("/")[1]?.toLowerCase() ?? "";
+	const isHome = activeSegment === "";
+	const desktopLinkClass = (href: string) => {
+		const active =
+			href === "/" ? isHome : activeSegment === href.split("/")[1]?.toLowerCase();
+		return `block px-4 py-2 text-sm hover:bg-gray-100 ${
+			active ? "text-ink font-semibold" : "text-gray-700"
+		}`;
+	};
+	const mobileLinkClass = (href: string) => {
+		const active =
+			href === "/" ? isHome : activeSegment === href.split("/")[1]?.toLowerCase();
+		return `block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5 ${
+			active ? "text-ink font-semibold" : ""
+		}`;
+	};
 	const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 	const userDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -68,26 +94,41 @@ export default function Header() {
 		// Clearing the identity is what drops the query cache — QueryCacheReset
 		// watches it, so no explicit queryClient.clear() belongs here.
 		setAccountInfo!({});
-		router.push("/login");
+		router.push("/");
 		closeMobileMenu();
 	};
 
 	return (
-		<nav className="bg-white border-b shadow mb-3">
+		<nav className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-card mb-3 text-left">
 			{/* Desktop + tablet bar */}
-			<div className="px-6 sm:px-14 py-3 flex items-center justify-between">
+			<div className="px-4 md:px-14 py-2.5 md:py-3 flex items-center justify-between">
 				{/* Left side: Brand + Main nav (hidden on mobile) */}
 				<div className="flex items-center space-x-6">
 					<Link
 						href="/"
-						className="text-xl font-semibold text-gray-800"
+						className="flex items-center gap-3 font-semibold text-gray-800"
 					>
-						{tLayout("AppName")}
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src="/lapikud-logo.svg"
+							alt="Lapikud"
+							className="h-8 md:h-9 w-auto"
+						/>
+						{/* The product name — same in every language, short
+						    enough to fit on any screen. */}
+						<span
+							className={`${syncopate.className} text-sm md:text-lg text-ink`}
+						>
+							inventuur
+						</span>
 					</Link>
 
 					<Link
 						href="/"
-						className="hidden md:inline text-gray-700 hover:text-blue-500"
+						aria-current={isHome ? "page" : undefined}
+						className={`hidden md:inline hover:text-blue-500 ${
+							isHome ? "text-ink font-semibold" : "text-gray-700"
+						}`}
 					>
 						{tCommon("Home")}
 					</Link>
@@ -99,6 +140,8 @@ export default function Header() {
 								onClick={() =>
 									setIsUserDropdownOpen(!isUserDropdownOpen)
 								}
+								aria-haspopup="menu"
+								aria-expanded={isUserDropdownOpen}
 								className="text-gray-700 hover:text-blue-500 flex items-center gap-1"
 							>
 								{tLayout("User")}
@@ -120,7 +163,7 @@ export default function Header() {
 								<div className="absolute mt-2 w-48 bg-white border border-gray-200 rounded shadow z-50">
 									<Link
 										href="/assetReservations"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/assetReservations")}
 										onClick={() =>
 											setIsUserDropdownOpen(false)
 										}
@@ -129,7 +172,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/categories"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/categories")}
 										onClick={() =>
 											setIsUserDropdownOpen(false)
 										}
@@ -138,7 +181,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/owners"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/owners")}
 										onClick={() =>
 											setIsUserDropdownOpen(false)
 										}
@@ -147,7 +190,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/removedAssets"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/removedAssets")}
 										onClick={() =>
 											setIsUserDropdownOpen(false)
 										}
@@ -165,6 +208,8 @@ export default function Header() {
 								onClick={() =>
 									setIsAdminDropdownOpen(!isAdminDropdownOpen)
 								}
+								aria-haspopup="menu"
+								aria-expanded={isAdminDropdownOpen}
 								className="text-gray-700 hover:text-blue-500 flex items-center gap-1"
 							>
 								{tLayout("Admin")}
@@ -186,7 +231,7 @@ export default function Header() {
 								<div className="absolute mt-2 w-48 bg-white border border-gray-200 rounded shadow z-50">
 									<Link
 										href="/dbassets"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/dbassets")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -195,7 +240,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/assetReservations"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/assetReservations")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -204,7 +249,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/categories"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/categories")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -212,8 +257,17 @@ export default function Header() {
 										{tLayout("Categories")}
 									</Link>
 									<Link
+										href="/tags"
+										className={desktopLinkClass("/tags")}
+										onClick={() =>
+											setIsAdminDropdownOpen(false)
+										}
+									>
+										{tLayout("Tags")}
+									</Link>
+									<Link
 										href="/categoryAssets"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/categoryAssets")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -222,7 +276,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/cupboards"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/cupboards")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -230,17 +284,8 @@ export default function Header() {
 										{tLayout("Cupboards")}
 									</Link>
 									<Link
-										href="/cupboardsInRooms"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
-										onClick={() =>
-											setIsAdminDropdownOpen(false)
-										}
-									>
-										{tLayout("CupboardsInRooms")}
-									</Link>
-									<Link
 										href="/locations"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/locations")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -248,17 +293,8 @@ export default function Header() {
 										{tLayout("Locations")}
 									</Link>
 									<Link
-										href="/locationAssets"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
-										onClick={() =>
-											setIsAdminDropdownOpen(false)
-										}
-									>
-										{tLayout("LocationAssets")}
-									</Link>
-									<Link
 										href="/owners"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/owners")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -267,7 +303,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/ownerAssets"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/ownerAssets")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -276,7 +312,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/rooms"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/rooms")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -285,7 +321,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/removedAssets"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/removedAssets")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -295,7 +331,7 @@ export default function Header() {
 									<hr className="my-1 border-gray-200" />
 									<Link
 										href="/users"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/users")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -304,7 +340,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/roles"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/roles")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -313,7 +349,7 @@ export default function Header() {
 									</Link>
 									<Link
 										href="/refreshTokens"
-										className="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+										className={desktopLinkClass("/refreshTokens")}
 										onClick={() =>
 											setIsAdminDropdownOpen(false)
 										}
@@ -371,9 +407,12 @@ export default function Header() {
 				</button>
 			</div>
 
-			{/* Mobile menu drawer */}
+			{/* Mobile menu drawer: capped to the viewport and scrollable in
+			    itself — with the full admin section it is taller than any
+			    phone screen, and without the cap the page body scrolls under
+			    the sticky header instead of the menu list. */}
 			{isMobileMenuOpen && (
-				<div className="md:hidden border-t bg-white px-4 py-3 flex flex-col gap-1">
+				<div className="md:hidden border-t bg-white px-4 py-3 flex flex-col gap-1 max-h-[calc(100dvh-56px)] overflow-y-auto overscroll-contain">
 					<Link href="/" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100" onClick={closeMobileMenu}>
 						{tCommon("Home")}
 					</Link>
@@ -383,16 +422,16 @@ export default function Header() {
 							<div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2">
 								{tLayout("User")}
 							</div>
-							<Link href="/assetReservations" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/assetReservations" className={mobileLinkClass("/assetReservations")} onClick={closeMobileMenu}>
 								{tLayout("AssetReservations")}
 							</Link>
-							<Link href="/categories" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/categories" className={mobileLinkClass("/categories")} onClick={closeMobileMenu}>
 								{tLayout("Categories")}
 							</Link>
-							<Link href="/owners" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/owners" className={mobileLinkClass("/owners")} onClick={closeMobileMenu}>
 								{tLayout("Owners")}
 							</Link>
-							<Link href="/removedAssets" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/removedAssets" className={mobileLinkClass("/removedAssets")} onClick={closeMobileMenu}>
 								{tLayout("RemovedAssets")}
 							</Link>
 						</>
@@ -403,50 +442,47 @@ export default function Header() {
 							<div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2">
 								{tLayout("Admin")}
 							</div>
-							<Link href="/dbassets" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/dbassets" className={mobileLinkClass("/dbassets")} onClick={closeMobileMenu}>
 								{tLayout("Assets")}
 							</Link>
-							<Link href="/assetReservations" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/assetReservations" className={mobileLinkClass("/assetReservations")} onClick={closeMobileMenu}>
 								{tLayout("AssetReservations")}
 							</Link>
-							<Link href="/categories" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/categories" className={mobileLinkClass("/categories")} onClick={closeMobileMenu}>
 								{tLayout("Categories")}
 							</Link>
-							<Link href="/categoryAssets" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/tags" className={mobileLinkClass("/tags")} onClick={closeMobileMenu}>
+								{tLayout("Tags")}
+							</Link>
+							<Link href="/categoryAssets" className={mobileLinkClass("/categoryAssets")} onClick={closeMobileMenu}>
 								{tLayout("CategoryAssets")}
 							</Link>
-							<Link href="/cupboards" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/cupboards" className={mobileLinkClass("/cupboards")} onClick={closeMobileMenu}>
 								{tLayout("Cupboards")}
 							</Link>
-							<Link href="/cupboardsInRooms" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
-								{tLayout("CupboardsInRooms")}
-							</Link>
-							<Link href="/locations" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/locations" className={mobileLinkClass("/locations")} onClick={closeMobileMenu}>
 								{tLayout("Locations")}
 							</Link>
-							<Link href="/locationAssets" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
-								{tLayout("LocationAssets")}
-							</Link>
-							<Link href="/owners" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/owners" className={mobileLinkClass("/owners")} onClick={closeMobileMenu}>
 								{tLayout("Owners")}
 							</Link>
-							<Link href="/ownerAssets" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/ownerAssets" className={mobileLinkClass("/ownerAssets")} onClick={closeMobileMenu}>
 								{tLayout("OwnerAssets")}
 							</Link>
-							<Link href="/rooms" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/rooms" className={mobileLinkClass("/rooms")} onClick={closeMobileMenu}>
 								{tLayout("Rooms")}
 							</Link>
-							<Link href="/removedAssets" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/removedAssets" className={mobileLinkClass("/removedAssets")} onClick={closeMobileMenu}>
 								{tLayout("RemovedAssets")}
 							</Link>
 							<hr className="my-1 border-gray-200" />
-							<Link href="/users" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/users" className={mobileLinkClass("/users")} onClick={closeMobileMenu}>
 								{tLayout("Users")}
 							</Link>
-							<Link href="/roles" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/roles" className={mobileLinkClass("/roles")} onClick={closeMobileMenu}>
 								{tLayout("Roles")}
 							</Link>
-							<Link href="/refreshTokens" className="block px-3 py-2 rounded text-gray-700 hover:bg-gray-100 pl-5" onClick={closeMobileMenu}>
+							<Link href="/refreshTokens" className={mobileLinkClass("/refreshTokens")} onClick={closeMobileMenu}>
 								{tLayout("RefreshTokens")}
 							</Link>
 						</>

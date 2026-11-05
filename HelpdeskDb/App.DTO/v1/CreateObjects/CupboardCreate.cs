@@ -17,4 +17,6 @@ public class CupboardCreate
     [Required(ErrorMessageResourceName = nameof(Base.Resources.Errors.ValidationErrors.Required),
         ErrorMessageResourceType = typeof(Base.Resources.Errors.ValidationErrors))]
     public string CodeName { get; set; } = default!;
+
+    public Guid RoomId { get; set; }
 }

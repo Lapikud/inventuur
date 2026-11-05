@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 
 interface ModalFooterProps {
 	onCancel: () => void;
@@ -28,28 +29,22 @@ export const ModalFooter = ({
 
 	return (
 		<div className="flex justify-end gap-3 mt-6">
-			<button
+			<Button
 				type="button"
+				variant="secondary"
 				onClick={onCancel}
 				disabled={isLoading}
-				className="px-4 py-2 bg-gray-400 hover:bg-gray-300 text-white rounded font-medium transition-colors"
 			>
 				{tCommon("Cancel")}
-			</button>
-			<button
+			</Button>
+			<Button
 				type={confirmType}
+				variant={destructive ? "destructive" : "default"}
 				onClick={confirmType === "button" ? onConfirm : undefined}
 				disabled={isLoading}
-				className={`px-4 py-2 ${
-					destructive
-						? "bg-red-600 hover:bg-red-700"
-						: "bg-orange-500 hover:bg-orange-600"
-				} font-medium text-white rounded transition-colors ${
-					isLoading ? "opacity-50 cursor-not-allowed" : ""
-				}`}
 			>
 				{isLoading ? tCommon("Processing") : confirmLabel}
-			</button>
+			</Button>
 		</div>
 	);
 };

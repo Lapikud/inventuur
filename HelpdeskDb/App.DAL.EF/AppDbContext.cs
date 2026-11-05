@@ -11,17 +11,17 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories { get; set; } = default!;
     public DbSet<CategoryAssets> CategoryAssetsCollection { get; set; } = default!;
     public DbSet<Cupboard> Cupboards { get; set; } = default!;
-    public DbSet<CupboardInRoom> CupboardsInRooms { get; set; } = default!;
     public DbSet<Location> Locations { get; set; } = default!;
-    public DbSet<LocationInCupboard> LocationsInCupboards { get; set; } = default!;
     public DbSet<Owner> Owners { get; set; } = default!;
     public DbSet<OwnerAssets> OwnerAssets { get; set; } = default!;
     public DbSet<Asset> Assets { get; set; } = default!;
     public DbSet<Room> Rooms { get; set; } = default!;
-    public DbSet<LocationAssets> LocationAssetsCollection { get; set; } = default!;
 
     public DbSet<RemovedAssets> RemovedAssetsCollection { get; set; } = default!;
     public DbSet<AssetReservation> AssetReservations { get; set; } = default!;
+    public DbSet<Tag> Tags { get; set; } = default!;
+    public DbSet<AssetTag> AssetTags { get; set; } = default!;
+    public DbSet<AssetPhoto> AssetPhotos { get; set; } = default!;
     public DbSet<AppUser> Users { get; set; } = default!;
     public DbSet<AppRole> Roles { get; set; } = default!;
     public DbSet<AppUserRole> UserRoles { get; set; } = default!;
@@ -70,6 +70,11 @@ public class AppDbContext : DbContext
             b.HasKey(a => a.Id);
             // b.HasIndex(a => a.AssetName);
             // b.HasIndex(a => a.LastTakenBy);
+            b.HasIndex(a => a.Slug).IsUnique();
+            b.Property(a => a.Slug).HasMaxLength(16);
+            b.Property(a => a.Visibility).HasConversion<string>().HasMaxLength(16)
+                .HasDefaultValue(AssetVisibility.Normal);
+            b.Property(a => a.LastAuditBy).HasMaxLength(64);
             b.Property(a => a.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             b.Property(a => a.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
@@ -121,6 +126,26 @@ public class AppDbContext : DbContext
 
         // Junction Table Configurations
         ConfigureJunctionTables(builder);
+
+        // Tag Configuration
+        builder.Entity<Tag>(b =>
+        {
+            b.HasKey(t => t.Id);
+            b.HasIndex(t => t.TagName).IsUnique();
+            b.Property(t => t.TagName).HasMaxLength(32);
+            b.Property(t => t.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            b.Property(t => t.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // AssetPhoto Configuration
+        builder.Entity<AssetPhoto>(b =>
+        {
+            b.HasKey(p => p.Id);
+            b.HasIndex(p => p.AssetId).IsUnique();
+            b.Property(p => p.ContentType).HasMaxLength(64);
+            b.Property(p => p.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            b.Property(p => p.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
     }
 
     private void ConfigureJunctionTables(ModelBuilder builder)
@@ -141,54 +166,44 @@ public class AppDbContext : DbContext
             b.Property(ca => ca.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
-        // LocationAssets
-        builder.Entity<LocationAssets>(b =>
+        // Cupboard → Room: direct FK, no junction.
+        builder.Entity<Cupboard>(b =>
         {
-            b.HasOne(la => la.Location)
-                .WithMany(l => l.LocationsAssetsCollection)
-                .HasForeignKey(la => la.LocationId);
+            b.HasOne(c => c.Room)
+                .WithMany(r => r.Cupboards)
+                .HasForeignKey(c => c.RoomId);
 
-            b.HasOne(la => la.Asset)
-                .WithMany(a => a.LocationsAssetsCollection)
-                .HasForeignKey(la => la.AssetId);
-
-            b.HasIndex(la => new { la.LocationId, la.AssetId }).IsUnique();
-            b.Property(la => la.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            b.Property(la => la.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            b.HasIndex(c => c.CodeName);
         });
 
-        // LocationInCupboard
-        builder.Entity<LocationInCupboard>(b =>
+        // Location → Room (required) and Location → Cupboard (optional):
+        // direct FKs, no junctions. An optional cupboard lets room-level
+        // spots exist ("Ladu — vaba pind"); the room consistency between
+        // the two FKs is enforced by the app, not the database.
+        builder.Entity<Location>(b =>
         {
-            b.HasOne(lic => lic.Location)
-                .WithMany(l => l.LocationsInCupboards)
-                .HasForeignKey(lic => lic.LocationId);
+            b.HasOne(l => l.Room)
+                .WithMany(r => r.Locations)
+                .HasForeignKey(l => l.RoomId);
 
-            b.HasOne(lic => lic.Cupboard)
-                .WithMany(c => c.LocationsInCupboards)
-                .HasForeignKey(lic => lic.CupboardId);
+            b.HasOne(l => l.Cupboard)
+                .WithMany(c => c.Locations)
+                .HasForeignKey(l => l.CupboardId);
 
-            b.HasKey(lic => lic.Id);
-            b.HasIndex(lic => new { lic.LocationId, lic.CupboardId }).IsUnique();
-            b.Property(lic => lic.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            b.Property(lic => lic.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            b.HasIndex(l => l.LocationName);
+            b.Property(l => l.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            b.Property(l => l.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
-        // CupboardInRoom
-        builder.Entity<CupboardInRoom>(b =>
+        // Asset → Location: direct optional FK — placing an asset is one
+        // column, the room/cupboard names resolve through the join.
+        builder.Entity<Asset>(b =>
         {
-            b.HasOne(cir => cir.Cupboard)
-                .WithMany(c => c.CupboardsInRooms)
-                .HasForeignKey(cir => cir.CupboardId);
+            b.HasOne(a => a.Location)
+                .WithMany()
+                .HasForeignKey(a => a.LocationId);
 
-            b.HasOne(cir => cir.Room)
-                .WithMany(r => r.CupboardsInRooms)
-                .HasForeignKey(cir => cir.RoomId);
-
-            b.HasKey(cir => cir.Id);
-            b.HasIndex(cir => new { cir.CupboardId, cir.RoomId }).IsUnique();
-            b.Property(cir => cir.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            b.Property(cir => cir.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            b.HasIndex(a => a.LocationId);
         });
 
         // OwnerAssets
@@ -241,6 +256,33 @@ public class AppDbContext : DbContext
 
             b.Property(ar => ar.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             b.Property(ar => ar.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // AssetTag
+        builder.Entity<AssetTag>(b =>
+        {
+            b.HasOne(at => at.Tag)
+                .WithMany(t => t.AssetTags)
+                .HasForeignKey(at => at.TagId);
+
+            b.HasOne(at => at.Asset)
+                .WithMany(a => a.AssetTags)
+                .HasForeignKey(at => at.AssetId);
+
+            b.HasKey(at => at.Id);
+            b.HasIndex(at => new { at.AssetId, at.TagId }).IsUnique();
+            b.Property(at => at.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            b.Property(at => at.ChangedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // AssetPhoto
+        builder.Entity<AssetPhoto>(b =>
+        {
+            b.HasOne(p => p.Asset)
+                .WithOne(a => a.AssetPhoto)
+                .HasForeignKey<AssetPhoto>(p => p.AssetId);
+
+            b.HasKey(p => p.Id);
         });
     }
 

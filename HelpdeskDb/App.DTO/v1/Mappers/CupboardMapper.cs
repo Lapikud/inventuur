@@ -1,4 +1,4 @@
-﻿using Base.Contracts;
+using Base.Contracts;
 
 namespace App.DTO.v1.Mappers;
 
@@ -11,6 +11,7 @@ public class CupboardMapper : IMapper<App.DTO.v1.Cupboard, App.BLL.DTO.Cupboard>
         {
             Id = entity.Id,
             CodeName = entity.CodeName,
+            RoomId = entity.RoomId,
         };
         return res;
     }
@@ -22,10 +23,11 @@ public class CupboardMapper : IMapper<App.DTO.v1.Cupboard, App.BLL.DTO.Cupboard>
         {
             Id = entity.Id,
             CodeName = entity.CodeName,
+            RoomId = entity.RoomId,
         };
         return res;
     }
-    
+
     public BLL.DTO.Cupboard Map(App.DTO.v1.CreateObjects.CupboardCreate entity)
     {
 
@@ -33,6 +35,7 @@ public class CupboardMapper : IMapper<App.DTO.v1.Cupboard, App.BLL.DTO.Cupboard>
         {
             Id = Guid.NewGuid(),
             CodeName = entity.CodeName,
+            RoomId = entity.RoomId,
         };
         return res;
     }

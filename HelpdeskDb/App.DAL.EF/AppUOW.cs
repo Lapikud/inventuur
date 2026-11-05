@@ -34,27 +34,12 @@ public class AppUOW : BaseUOW<AppDbContext>, IAppUOW
     private ICupboardRepository? _cupboardRepository;
     public ICupboardRepository CupboardRepository =>
         _cupboardRepository ??= new CupboardRepository(UOWDbContext);
-    
-    // CupboardInRoom
-    private ICupboardInRoomRepository? _cupboardInRoomRepository;
-    public ICupboardInRoomRepository CupboardInRoomRepository =>
-        _cupboardInRoomRepository ??= new CupboardInRoomRepository(UOWDbContext);
 
     // Location
     private ILocationRepository? _locationRepository;
     public ILocationRepository LocationRepository =>
         _locationRepository ??= new LocationRepository(UOWDbContext);
-    
-    // LocationInCupboard
-    private ILocationInCupboardRepository? _locationInCupboardRepository;
-    public ILocationInCupboardRepository LocationInCupboardRepository =>
-        _locationInCupboardRepository ??= new LocationInCupboardRepository(UOWDbContext);
-    
-    // LocationAssets
-    private ILocationAssetsRepository? _locationAssetsRepository;
-    public ILocationAssetsRepository LocationAssetsRepository =>
-        _locationAssetsRepository ??= new LocationAssetsRepository(UOWDbContext);
-    
+
     // Owner
     private IOwnerRepository? _ownerRepository;
     public IOwnerRepository OwnerRepository =>
@@ -81,8 +66,22 @@ public class AppUOW : BaseUOW<AppDbContext>, IAppUOW
     public IAppUserRoleRepository AppUserRoleRepository =>
         _appUserRoleRepository ??= new AppUserRoleRepository(UOWDbContext);
     
-    // AssetReservation
     private IAssetReservationRepository? _assetReservationRepository;
     public IAssetReservationRepository AssetReservationRepository =>
         _assetReservationRepository ??= new AssetReservationRepository(UOWDbContext);
+
+    // Tag
+    private ITagRepository? _tagRepository;
+    public ITagRepository TagRepository =>
+        _tagRepository ??= new TagRepository(UOWDbContext);
+
+    // AssetTag
+    private IAssetTagRepository? _assetTagRepository;
+    public IAssetTagRepository AssetTagRepository =>
+        _assetTagRepository ??= new AssetTagRepository(UOWDbContext);
+
+    // AssetPhoto
+    private IAssetPhotoRepository? _assetPhotoRepository;
+    public IAssetPhotoRepository AssetPhotoRepository =>
+        _assetPhotoRepository ??= new AssetPhotoRepository(UOWDbContext);
 }

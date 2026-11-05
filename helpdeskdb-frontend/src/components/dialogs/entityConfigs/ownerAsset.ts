@@ -66,7 +66,11 @@ export const assetsToOptions = (assets: IAsset[]): SelectOption[] =>
 	toOptions(assets, (asset) => asset.assetName);
 
 export const ownersToOptions = (owners: IOwner[]): SelectOption[] =>
-	toOptions(owners, (owner) => owner.ownerName);
+	toOptions(owners, (owner) =>
+		owner.displayName
+			? `${owner.displayName} (${owner.ownerName})`
+			: owner.ownerName,
+	);
 
 export const ownerAssetToForm = (
 	ownerAsset: IOwnerAssetWithNames,

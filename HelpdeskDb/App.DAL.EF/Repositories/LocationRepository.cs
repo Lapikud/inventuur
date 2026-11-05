@@ -16,8 +16,8 @@ public class LocationRepository : BaseRepository<App.DAL.DTO.Location, App.Domai
     {
         var query = GetQuery();
         query = query
-            .Include(l => l.LocationsInCupboards)
-            .Include(l => l.LocationsAssetsCollection)
+            .Include(l => l.Room)
+            .Include(l => l.Cupboard)
             .OrderBy(l => l.LocationName);
         return (await query.ToListAsync()).Select(e => Mapper.Map(e)!);
     }
